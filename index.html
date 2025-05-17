@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heraldry Generator</title>
+  <link rel="canonical" href="https://wilkopaints.github.io/heraldry/" />
+  <link rel="manifest" href="/heraldry/manifest.webmanifest">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+ 
+  <h1>heraldry Generator</h1>
+
+  <script>
+      if (navigator.serviceWorker) {
+        navigator.serviceWorker.register (
+          '/heraldry/sw.js',
+          {scope: '/heraldry/'}
+        )
+      }
+  </script>
+  <script src="js/heraldry.js"></script>
+</body>
+</html>

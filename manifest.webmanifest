@@ -1,0 +1,17 @@
+{
+  "name": "Heraldry PWA",
+  "short_name": "Heraldry",
+  "description": "Heraldry Generator Progressive Web App",
+  "scope": "/heraldry/",
+  "start_url": "/heraldry/",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "display": "standalone", 
+  "icons": [
+      {
+        "src": "/heraldry/img/icon.png",
+        "type": "image/png",
+        "sizes": "700x700"
+      }
+  ]
+}
