@@ -15,7 +15,13 @@
     <div class="generator">
       <input type="submit" value="Randomise">
     </div>
-    <div class="controls">
+    <div class="rules">
+      <label><input type="checkbox" id="rule-normal" checked> Normal heraldry rules</label>
+      <label><input type="checkbox" id="rule-brettonia"> Bretonnian rules</label>
+    </div>
+    <details>
+      <summary>Tweak</summary>
+      <div class="controls" id="controls">
       <label class="ctrl-label">Division
         <select id="ctrl-shape"></select>
       </label>
@@ -34,6 +40,7 @@
         <select id="ctrl-device"></select>
       </label>
     </div>
+    </details>
     <div id="heraldry"></div>
   </form>
   <script>

@@ -87,7 +87,8 @@ var colours = {
     3: "#790000", //gules
     4: "#000000", //sable
     5: "#11671d", // vert
-    6: "#dbdbdb" // cendree
+    6: "#dbdbdb", // cendree
+    7: "#7b3f8c"  // purpure
 }
 
 var shapes = {
@@ -124,7 +125,8 @@ const colourNames = {
     "#790000": "Gules",
     "#000000": "Sable",
     "#11671d": "Vert",
-    "#dbdbdb": "Cendré"
+    "#dbdbdb": "Cendré",
+    "#7b3f8c": "Purpure"
 };
 
 const shapeNames = {
@@ -154,9 +156,34 @@ const shapeNames = {
     "gyronny": "Gyronny"
 };
 
+function isBretonnian() { return document.getElementById('rule-brettonia')?.checked; }
+function isNormalRules() { return document.getElementById('rule-normal')?.checked ?? true; }
+
+const bretonnianExcluded = ["#11671d", "#7b3f8c"]; // vert, purpure
+
+const bretonnianFavouredDevices = [
+    "img/devices/fleur-de-lys-1.png",
+    "img/devices/fleur-de-lys-2.png",
+    "img/devices/fleur-de-lys-3.png",
+    "img/devices/fleur-de-lys-4.png",
+    "img/devices/fleur-de-lys-trident-1.png",
+    "img/devices/fleur-de-lys-trident-2.png",
+    "img/devices/cup.png",
+];
+
 function randomColour() {
-    var value = colours[Math.floor(Math.random() * Object.keys(colours).length)];
-    return value;
+    const excludes = isBretonnian() ? bretonnianExcluded : [];
+    const pool = Object.values(colours).filter(c => !excludes.includes(c));
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function randomDevice() {
+    if (isBretonnian()) {
+        // Give favoured devices 4× the weight of others
+        const pool = [...deviceList, ...bretonnianFavouredDevices.flatMap(d => Array(3).fill(d))];
+        return pool[Math.floor(Math.random() * pool.length)];
+    }
+    return deviceList[Math.floor(Math.random() * deviceList.length)];
 }
 
 function deviceDisplayName(path) {
@@ -168,14 +195,15 @@ function deviceDisplayName(path) {
 const metals = new Set(["#d4af34", "#ffffff", "#dbdbdb"]);
 
 function contrastingTincture(fieldColour, col1, col2) {
+    const excludes = isBretonnian() ? bretonnianExcluded : [];
     const fieldIsMetal = metals.has(fieldColour);
-    // Exclude both field colours so the charge can never blend into either half of the field.
-    const pool = Object.values(colours).filter(c =>
-        c !== col1 && c !== col2 && (fieldIsMetal ? !metals.has(c) : metals.has(c))
-    );
+    const pool = Object.values(colours).filter(c => {
+        if (c === col1 || c === col2 || excludes.includes(c)) return false;
+        if (isNormalRules()) return fieldIsMetal ? !metals.has(c) : metals.has(c);
+        return true;
+    });
     if (pool.length > 0) return pool[Math.floor(Math.random() * pool.length)];
-    // Fallback: relax the tincture rule, just avoid matching the field.
-    const fallback = Object.values(colours).filter(c => c !== col1 && c !== col2);
+    const fallback = Object.values(colours).filter(c => c !== col1 && c !== col2 && !excludes.includes(c));
     return fallback.length > 0 ? fallback[Math.floor(Math.random() * fallback.length)] : "#d4af34";
 }
 
@@ -549,7 +577,7 @@ function renderFromControls() {
 }
 
 const updateHeraldry = () => {
-    const device = deviceList[Math.floor(Math.random() * deviceList.length)];
+    const device = randomDevice();
     const col1 = randomColour();
     const col2 = randomColour();
     const shape = shapes[Math.floor(Math.random() * Object.keys(shapes).length)];
@@ -564,6 +592,13 @@ form.addEventListener('submit', (e) => { e.preventDefault(); updateHeraldry(); }
 ['ctrl-shape', 'ctrl-col1', 'ctrl-col2', 'ctrl-count', 'ctrl-device'].forEach(id => {
     document.getElementById(id).addEventListener('change', () => {
         updateSwatches();
+        renderFromControls();
+    });
+});
+const ruleBoxes = ['rule-normal', 'rule-brettonia'].map(id => document.getElementById(id));
+ruleBoxes.forEach(box => {
+    box.addEventListener('change', () => {
+        if (box.checked) ruleBoxes.forEach(other => { if (other !== box) other.checked = false; });
         renderFromControls();
     });
 });
