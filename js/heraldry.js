@@ -115,7 +115,9 @@ var shapes = {
     20: "chevronny",
     21: "chequy",
     22: "lozengy",
-    23: "gyronny"
+    23: "gyronny",
+    24: "gyronny6",
+    25: "gyronny12"
 }
 
 const colourNames = {
@@ -153,7 +155,9 @@ const shapeNames = {
     "chevronny": "Chevronny",
     "chequy": "Chequy",
     "lozengy": "Lozengy",
-    "gyronny": "Gyronny"
+    "gyronny": "Gyronny of 8",
+    "gyronny6": "Gyronny of 6",
+    "gyronny12": "Gyronny of 12"
 };
 
 function isBretonnian() { return document.getElementById('rule-brettonia')?.checked; }
@@ -279,13 +283,66 @@ function getFieldColourAt(x, y, shape, col1, col2) {
             const u = ((x+y)%40+40)%40, v = ((x-y)%40+40)%40;
             return (Math.abs(u-20)+Math.abs(v-20) <= 20) ? col2 : col1;
         }
-        case 'gyronny': {
-            const angle = Math.atan2(y-120, x-100);
-            const sector = Math.floor(((angle+Math.PI)/(Math.PI/3)+6)) % 6;
-            return sector % 2 === 0 ? col1 : col2;
-        }
+        case 'gyronny':   return gyronnyColour(x, y, 8,  col1, col2);
+        case 'gyronny6':  return gyronnyColour(x, y, 6,  col1, col2);
+        case 'gyronny12': return gyronnyColour(x, y, 12, col1, col2);
         default: return col1;
     }
+}
+
+// Find where a ray from (cx,cy) at angle hits the bounding rectangle 0..W x 0..H
+function rayHitsBounds(cx, cy, angle) {
+    const W = 200, H = 240;
+    const dx = Math.cos(angle), dy = Math.sin(angle);
+    let t = Infinity;
+    if (dx > 0) t = Math.min(t, (W - cx) / dx);
+    if (dx < 0) t = Math.min(t, (0 - cx) / dx);
+    if (dy > 0) t = Math.min(t, (H - cy) / dy);
+    if (dy < 0) t = Math.min(t, (0 - cy) / dy);
+    return { x: cx + t * dx, y: cy + t * dy };
+}
+
+// Which edge of the 200×240 bounding box is point p on? (0=top,1=right,2=bottom,3=left)
+function edgeOf(p) {
+    const eps = 0.5;
+    if (p.y < eps)       return 0;
+    if (p.x > 200 - eps) return 1;
+    if (p.y > 240 - eps) return 2;
+    return 3;
+}
+const gyronnyCorners = [{x:200,y:0},{x:200,y:240},{x:0,y:240},{x:0,y:0}];
+
+function buildGyronny(n, col1, col2) {
+    const cx = 100, cy = 120;
+    const pts = Array.from({ length: n }, (_, i) => {
+        const angle = (i / n) * 2 * Math.PI - Math.PI / 2; // start at top, clockwise
+        return rayHitsBounds(cx, cy, angle);
+    });
+    let content = '';
+    for (let i = 0; i < n; i++) {
+        const p1 = pts[i], p2 = pts[(i + 1) % n];
+        const col = i % 2 === 0 ? col1 : col2;
+        // Walk clockwise along bounding-box edges from p1 to p2, inserting corners
+        let border = [`${p1.x.toFixed(1)},${p1.y.toFixed(1)}`];
+        let e = edgeOf(p1);
+        const e2 = edgeOf(p2);
+        while (e !== e2) {
+            const c = gyronnyCorners[e];
+            border.push(`${c.x},${c.y}`);
+            e = (e + 1) % 4;
+        }
+        border.push(`${p2.x.toFixed(1)},${p2.y.toFixed(1)}`);
+        content += `<polygon points="${cx},${cy} ${border.join(' ')}" fill="${col}"/>`;
+    }
+    return { defs: '', content };
+}
+
+function gyronnyColour(x, y, n, col1, col2) {
+    const cx = 100, cy = 120;
+    let angle = Math.atan2(y - cy, x - cx) + Math.PI / 2; // 0 at top, clockwise
+    angle = ((angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const sector = Math.floor(angle / (2 * Math.PI / n));
+    return sector % 2 === 0 ? col1 : col2;
 }
 
 // Returns { defs, content } — SVG fragments for the heraldic field division
@@ -335,12 +392,12 @@ function generateDivision(shape, col1, col2) {
         case 'bend':
             return { defs: '', content: `
                 ${field(col1)}
-                <polygon points="-20,60 60,-20 220,180 140,260" fill="${col2}"/>` };
+                <polygon points="-144,-95 256,405 344,335 -56,-165" fill="${col2}"/>` };
 
         case 'bendSinister':
             return { defs: '', content: `
                 ${field(col1)}
-                <polygon points="140,-20 220,60 60,260 -20,180" fill="${col2}"/>` };
+                <polygon points="-56,405 344,-95 256,-165 -144,335" fill="${col2}"/>` };
 
         case 'chevron':
             return { defs: '', content: `
@@ -434,16 +491,9 @@ function generateDivision(shape, col1, col2) {
             return { defs, content: `<rect x="0" y="0" width="${W}" height="${H}" fill="url(#lozengy-pat)"/>` };
         }
 
-        case 'gyronny': {
-            const cx = 100, cy = 120;
-            return { defs: '', content: `
-                <polygon points="${cx},${cy} 0,0 100,0" fill="${col1}"/>
-                <polygon points="${cx},${cy} 100,0 ${W},0" fill="${col2}"/>
-                <polygon points="${cx},${cy} ${W},0 ${W},80" fill="${col1}"/>
-                <polygon points="${cx},${cy} ${W},80 100,${H}" fill="${col2}"/>
-                <polygon points="${cx},${cy} 100,${H} 0,80" fill="${col1}"/>
-                <polygon points="${cx},${cy} 0,80 0,0" fill="${col2}"/>` };
-        }
+        case 'gyronny':   return buildGyronny(8,  col1, col2);
+        case 'gyronny6':  return buildGyronny(6,  col1, col2);
+        case 'gyronny12': return buildGyronny(12, col1, col2);
 
         default:
             return { defs: '', content: field(col1) };
