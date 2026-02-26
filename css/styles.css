@@ -4,9 +4,7 @@ body {
     background-color: #fff;
     margin: 0;
     padding: 2em;
-    height: 90vh;
-    background: url(../img/icon.png) 95% 95% no-repeat;
-    background-size: 20vh;
+    min-height: 90vh;
 }
 h1 {
     font-size: 1.5em;
@@ -19,4 +17,101 @@ p {
 }
 a {
     color: #369;
+}
+.generator {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    margin: 1em 0;
+}
+#heraldry {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 1em;
+    gap: 0.75em;
+}
+#heraldry svg {
+    width: min(80vw, 65vh);
+    height: auto;
+    filter: drop-shadow(4px 6px 14px rgba(0,0,0,0.45));
+}
+.shield-caption {
+    text-align: center;
+    font-size: 0.9em;
+    color: #555;
+    margin: 0;
+    letter-spacing: 0.02em;
+}
+.rules {
+    display: flex;
+    gap: 1.2em;
+    margin: 0.25em 0 0.5em;
+    font-size: 0.9em;
+    color: #555;
+}
+.rules label {
+    display: flex;
+    align-items: center;
+    gap: 0.35em;
+    cursor: pointer;
+}
+details {
+    margin: 0.5em 0 1em;
+}
+details summary {
+    cursor: pointer;
+    font-size: 0.9em;
+    color: #555;
+    user-select: none;
+    width: fit-content;
+}
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6em 1.2em;
+    margin: 0.5em 0 1em;
+}
+.ctrl-label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.8em;
+    color: #666;
+    gap: 0.25em;
+}
+.ctrl-label select {
+    font-size: 1em;
+    padding: 0.2em 0.3em;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    background: #fafafa;
+    max-width: 16em;
+}
+#charge-colours {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6em 1.2em;
+    width: 100%;
+}
+.ctrl-row {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+}
+.ctrl-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 1px solid #888;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+.swatch {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border: 1px solid #888;
+    border-radius: 2px;
+    margin-right: 3px;
+    vertical-align: middle;
 }
