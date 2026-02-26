@@ -502,6 +502,16 @@ function generateDivision(shape, col1, col2) {
 function deviceFilterDefs(tinctures) {
     return [...new Set(tinctures)].map(t => {
         const id = `dev-${t.replace('#','')}`;
+        if (t === '#000000') {
+            // Black tincture: invert the image so outlines become white and fill becomes black
+            return `<filter id="${id}" color-interpolation-filters="sRGB">
+      <feComponentTransfer>
+        <feFuncR type="linear" slope="-1" intercept="1"/>
+        <feFuncG type="linear" slope="-1" intercept="1"/>
+        <feFuncB type="linear" slope="-1" intercept="1"/>
+      </feComponentTransfer>
+    </filter>`;
+        }
         // multiply blend: black pixels stay black (outline), white pixels become tincture colour
         return `<filter id="${id}" color-interpolation-filters="sRGB" x="-5%" y="-5%" width="110%" height="110%">
       <feFlood flood-color="${t}" result="colour"/>
