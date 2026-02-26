@@ -4,9 +4,7 @@ body {
     background-color: #fff;
     margin: 0;
     padding: 2em;
-    height: 90vh;
-    background: url(../img/icon.png) 95% 95% no-repeat;
-    background-size: 20vh;
+    min-height: 90vh;
 }
 h1 {
     font-size: 1.5em;
@@ -19,4 +17,17 @@ p {
 }
 a {
     color: #369;
+}
+.generator {
+    margin: 1em 0;
+}
+#heraldry {
+    display: flex;
+    justify-content: center;
+    margin-top: 1em;
+}
+#heraldry svg {
+    width: min(80vw, 65vh);
+    height: auto;
+    filter: drop-shadow(4px 6px 14px rgba(0,0,0,0.45));
 }
