@@ -23,11 +23,29 @@ a {
 }
 #heraldry {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
     margin-top: 1em;
+    gap: 0.75em;
 }
 #heraldry svg {
     width: min(80vw, 65vh);
     height: auto;
     filter: drop-shadow(4px 6px 14px rgba(0,0,0,0.45));
+}
+.shield-caption {
+    text-align: center;
+    font-size: 0.9em;
+    color: #555;
+    margin: 0;
+    letter-spacing: 0.02em;
+}
+.swatch {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border: 1px solid #888;
+    border-radius: 2px;
+    margin-right: 3px;
+    vertical-align: middle;
 }

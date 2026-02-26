@@ -117,9 +117,69 @@ var shapes = {
     23: "gyronny"
 }
 
+const colourNames = {
+    "#d4af34": "Or",
+    "#ffffff": "Argent",
+    "#3953a4": "Azure",
+    "#790000": "Gules",
+    "#000000": "Sable",
+    "#11671d": "Vert",
+    "#dbdbdb": "Cendré"
+};
+
+const shapeNames = {
+    "partyPerFess": "Party per Fess",
+    "partyPerPale": "Party per Pale",
+    "partyPerBendSinister": "Party per Bend Sinister",
+    "quarterly": "Quarterly",
+    "quarterlyWithHeart": "Quarterly",
+    "chief": "Chief",
+    "pale": "Pale",
+    "fess": "Fess",
+    "bend": "Bend",
+    "bendSinister": "Bend Sinister",
+    "chevron": "Chevron",
+    "cross": "Cross",
+    "saltire": "Saltire",
+    "pall": "Pall",
+    "flaunches": "Flaunches",
+    "pile": "Pile",
+    "bordure": "Bordure",
+    "barry": "Barry",
+    "pally": "Pally",
+    "bendy": "Bendy",
+    "chevronny": "Chevronny",
+    "chequy": "Chequy",
+    "lozengy": "Lozengy",
+    "gyronny": "Gyronny"
+};
+
 function randomColour() {
     var value = colours[Math.floor(Math.random() * Object.keys(colours).length)];
     return value;
+}
+
+function deviceDisplayName(path) {
+    return path.replace('img/devices/', '').replace('.png', '')
+               .split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+// Pick device tincture following the rule of tincture:
+// metals (Or, Argent, Cendré) on colours, colours on metals.
+const metals = new Set(["#d4af34", "#ffffff", "#dbdbdb"]);
+
+function pickDeviceTincture(col1, col2) {
+    const col1IsMetal = metals.has(col1);
+    const candidates = Object.values(colours).filter(c => {
+        if (c === col1 || c === col2) return false;
+        return col1IsMetal ? !metals.has(c) : metals.has(c);
+    });
+    if (candidates.length > 0) {
+        return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+    // Fallback: anything different from the field
+    const fallback = Object.values(colours).filter(c => c !== col1 && c !== col2);
+    return fallback.length > 0 ? fallback[Math.floor(Math.random() * fallback.length)] : "#d4af34";
 }
 
 // Returns { defs, content } — SVG fragments for the heraldic field division
@@ -284,24 +344,46 @@ function generateDivision(shape, col1, col2) {
     }
 }
 
-function generateShieldSVG(device, col1, col2, shape) {
+function generateShieldSVG(device, col1, col2, shape, devColour) {
     const shieldPath = "M 0,0 L 200,0 L 200,140 C 200,190 160,220 100,240 C 40,220 0,190 0,140 Z";
     const { defs, content } = generateDivision(shape, col1, col2);
+
+    // SVG filter: extracts dark areas of the device image and recolours them to devColour.
+    // Works for both black-on-white and black-on-transparent PNGs.
+    const deviceFilter = `
+    <filter id="dev-color" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix"
+          values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -1 -1 -1 0 3"
+          in="SourceGraphic" result="darkMask"/>
+      <feComposite in="darkMask" in2="SourceGraphic" operator="in" result="mask"/>
+      <feFlood flood-color="${devColour}" result="color"/>
+      <feComposite in="color" in2="mask" operator="in"/>
+    </filter>`;
 
     return `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" aria-label="Heraldic shield">
   <defs>
     <clipPath id="shield-clip">
       <path d="${shieldPath}"/>
     </clipPath>
+    ${deviceFilter}
     ${defs}
   </defs>
   <g clip-path="url(#shield-clip)">
     ${content}
   </g>
   <image href="${device}" x="20" y="25" width="160" height="160"
-      clip-path="url(#shield-clip)" style="mix-blend-mode:multiply"/>
+      clip-path="url(#shield-clip)" filter="url(#dev-color)"/>
   <path d="${shieldPath}" fill="none" stroke="#1a1a1a" stroke-width="4" stroke-linejoin="round"/>
 </svg>`;
+}
+
+function generateCaption(device, col1, col2, shape, devColour) {
+    return `<p class="shield-caption">
+        <span class="swatch" style="background:${col1}"></span>${colourNames[col1]}
+        &amp; <span class="swatch" style="background:${col2}"></span>${colourNames[col2]}
+        &ndash; ${shapeNames[shape] || shape}
+        &ndash; <span class="swatch" style="background:${devColour}"></span>${deviceDisplayName(device)}
+    </p>`;
 }
 
 const updateHeraldry = () => {
@@ -309,7 +391,9 @@ const updateHeraldry = () => {
     const colourOne = randomColour();
     const colourTwo = randomColour();
     const shape = shapes[Math.floor(Math.random() * Object.keys(shapes).length)];
-    heraldry.innerHTML = generateShieldSVG(device, colourOne, colourTwo, shape);
+    const devColour = pickDeviceTincture(colourOne, colourTwo);
+    heraldry.innerHTML = generateShieldSVG(device, colourOne, colourTwo, shape, devColour)
+                       + generateCaption(device, colourOne, colourTwo, shape, devColour);
 };
 
 updateHeraldry();
