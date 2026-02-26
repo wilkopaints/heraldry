@@ -40,6 +40,37 @@ a {
     margin: 0;
     letter-spacing: 0.02em;
 }
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6em 1.2em;
+    margin: 0.5em 0 1em;
+}
+.ctrl-label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.8em;
+    color: #666;
+    gap: 0.25em;
+}
+.ctrl-label select {
+    font-size: 1em;
+    padding: 0.2em 0.3em;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    background: #fafafa;
+    max-width: 16em;
+}
+.ctrl-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 1px solid #888;
+    border-radius: 2px;
+    vertical-align: middle;
+    align-self: flex-end;
+    margin-bottom: 0.3em;
+}
 .swatch {
     display: inline-block;
     width: 11px;

@@ -483,20 +483,87 @@ function generateCaption(device, col1, col2, shape, symbols) {
     return `<p class="shield-caption">${parts.join(' &ndash; ')}</p>`;
 }
 
-const updateHeraldry = () => {
-    const device = deviceList[Math.floor(Math.random() * deviceList.length)];
-    const colourOne = randomColour();
-    const colourTwo = randomColour();
-    const shape = shapes[Math.floor(Math.random() * Object.keys(shapes).length)];
-    const count = Math.floor(Math.random() * 7); // 0–6 charges
+function populateControls() {
+    const shapeSelect = document.getElementById('ctrl-shape');
+    Object.values(shapes).forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = shapeNames[v] || v;
+        shapeSelect.appendChild(opt);
+    });
+
+    ['ctrl-col1', 'ctrl-col2'].forEach(id => {
+        const sel = document.getElementById(id);
+        Object.values(colours).forEach(hex => {
+            const opt = document.createElement('option');
+            opt.value = hex;
+            opt.textContent = colourNames[hex];
+            sel.appendChild(opt);
+        });
+    });
+
+    const countSelect = document.getElementById('ctrl-count');
+    for (let i = 0; i <= 6; i++) {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = i;
+        countSelect.appendChild(opt);
+    }
+
+    const deviceSelect = document.getElementById('ctrl-device');
+    deviceList.forEach(path => {
+        const opt = document.createElement('option');
+        opt.value = path;
+        opt.textContent = deviceDisplayName(path);
+        deviceSelect.appendChild(opt);
+    });
+}
+
+function updateSwatches() {
+    document.getElementById('swatch-col1').style.background = document.getElementById('ctrl-col1').value;
+    document.getElementById('swatch-col2').style.background = document.getElementById('ctrl-col2').value;
+}
+
+function setControls(device, col1, col2, shape, count) {
+    document.getElementById('ctrl-device').value = device;
+    document.getElementById('ctrl-col1').value = col1;
+    document.getElementById('ctrl-col2').value = col2;
+    document.getElementById('ctrl-shape').value = shape;
+    document.getElementById('ctrl-count').value = count;
+    updateSwatches();
+}
+
+function renderFromControls() {
+    const device = document.getElementById('ctrl-device').value;
+    const col1 = document.getElementById('ctrl-col1').value;
+    const col2 = document.getElementById('ctrl-col2').value;
+    const shape = document.getElementById('ctrl-shape').value;
+    const count = parseInt(document.getElementById('ctrl-count').value);
     const { positions, size } = getArrangement(count);
     const symbols = positions.map(({ cx, cy }) => ({
         cx, cy, size,
-        tincture: contrastingTincture(getFieldColourAt(cx, cy, shape, colourOne, colourTwo), colourOne, colourTwo),
+        tincture: contrastingTincture(getFieldColourAt(cx, cy, shape, col1, col2), col1, col2),
     }));
-    heraldry.innerHTML = generateShieldSVG(device, colourOne, colourTwo, shape, symbols)
-                       + generateCaption(device, colourOne, colourTwo, shape, symbols);
+    heraldry.innerHTML = generateShieldSVG(device, col1, col2, shape, symbols)
+                       + generateCaption(device, col1, col2, shape, symbols);
+}
+
+const updateHeraldry = () => {
+    const device = deviceList[Math.floor(Math.random() * deviceList.length)];
+    const col1 = randomColour();
+    const col2 = randomColour();
+    const shape = shapes[Math.floor(Math.random() * Object.keys(shapes).length)];
+    const count = Math.floor(Math.random() * 7);
+    setControls(device, col1, col2, shape, count);
+    renderFromControls();
 };
 
+populateControls();
 updateHeraldry();
 form.addEventListener('submit', (e) => { e.preventDefault(); updateHeraldry(); });
+['ctrl-shape', 'ctrl-col1', 'ctrl-col2', 'ctrl-count', 'ctrl-device'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => {
+        updateSwatches();
+        renderFromControls();
+    });
+});
