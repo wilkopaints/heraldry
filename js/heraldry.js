@@ -599,13 +599,49 @@ function updateSwatches() {
     document.getElementById('swatch-col2').style.background = document.getElementById('ctrl-col2').value;
 }
 
-function setControls(device, col1, col2, shape, count) {
+function buildChargeColourControls(count, tinctures = []) {
+    const container = document.getElementById('charge-colours');
+    container.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        const label = document.createElement('label');
+        label.className = 'ctrl-label';
+        label.appendChild(document.createTextNode(count === 1 ? 'Charge' : `Charge ${i + 1}`));
+        const row = document.createElement('span');
+        row.className = 'ctrl-row';
+        const swatch = document.createElement('span');
+        swatch.className = 'ctrl-swatch';
+        swatch.id = `charge-swatch-${i}`;
+        const sel = document.createElement('select');
+        sel.id = `charge-col-${i}`;
+        Object.values(colours).forEach(hex => {
+            const opt = document.createElement('option');
+            opt.value = hex;
+            opt.textContent = colourNames[hex];
+            sel.appendChild(opt);
+        });
+        row.appendChild(swatch);
+        row.appendChild(sel);
+        label.appendChild(row);
+        container.appendChild(label);
+        if (tinctures[i]) {
+            sel.value = tinctures[i];
+            swatch.style.background = tinctures[i];
+        }
+        sel.addEventListener('change', () => {
+            swatch.style.background = sel.value;
+            renderFromControls();
+        });
+    }
+}
+
+function setControls(device, col1, col2, shape, count, tinctures = []) {
     document.getElementById('ctrl-device').value = device;
     document.getElementById('ctrl-col1').value = col1;
     document.getElementById('ctrl-col2').value = col2;
     document.getElementById('ctrl-shape').value = shape;
     document.getElementById('ctrl-count').value = count;
     updateSwatches();
+    buildChargeColourControls(count, tinctures);
 }
 
 function renderFromControls() {
@@ -615,10 +651,12 @@ function renderFromControls() {
     const shape = document.getElementById('ctrl-shape').value;
     const count = parseInt(document.getElementById('ctrl-count').value);
     const { positions, size } = getArrangement(count);
-    const symbols = positions.map(({ cx, cy }) => ({
-        cx, cy, size,
-        tincture: contrastingTincture(getFieldColourAt(cx, cy, shape, col1, col2), col1, col2),
-    }));
+    const symbols = positions.map(({ cx, cy }, i) => {
+        const sel = document.getElementById(`charge-col-${i}`);
+        const tincture = sel ? sel.value
+            : contrastingTincture(getFieldColourAt(cx, cy, shape, col1, col2), col1, col2);
+        return { cx, cy, size, tincture };
+    });
     heraldry.innerHTML = generateShieldSVG(device, col1, col2, shape, symbols)
                        + generateCaption(device, col1, col2, shape, symbols);
 }
@@ -629,18 +667,34 @@ const updateHeraldry = () => {
     const col2 = randomColour();
     const shape = shapes[Math.floor(Math.random() * Object.keys(shapes).length)];
     const count = Math.floor(Math.random() * 7);
-    setControls(device, col1, col2, shape, count);
+    const { positions } = getArrangement(count);
+    const tinctures = positions.map(({ cx, cy }) =>
+        contrastingTincture(getFieldColourAt(cx, cy, shape, col1, col2), col1, col2)
+    );
+    setControls(device, col1, col2, shape, count, tinctures);
     renderFromControls();
 };
 
 populateControls();
 updateHeraldry();
 form.addEventListener('submit', (e) => { e.preventDefault(); updateHeraldry(); });
-['ctrl-shape', 'ctrl-col1', 'ctrl-col2', 'ctrl-count', 'ctrl-device'].forEach(id => {
+['ctrl-shape', 'ctrl-col1', 'ctrl-col2', 'ctrl-device'].forEach(id => {
     document.getElementById(id).addEventListener('change', () => {
         updateSwatches();
         renderFromControls();
     });
+});
+document.getElementById('ctrl-count').addEventListener('change', () => {
+    const count = parseInt(document.getElementById('ctrl-count').value);
+    const col1 = document.getElementById('ctrl-col1').value;
+    const col2 = document.getElementById('ctrl-col2').value;
+    const shape = document.getElementById('ctrl-shape').value;
+    const { positions } = getArrangement(count);
+    const tinctures = positions.map(({ cx, cy }) =>
+        contrastingTincture(getFieldColourAt(cx, cy, shape, col1, col2), col1, col2)
+    );
+    buildChargeColourControls(count, tinctures);
+    renderFromControls();
 });
 const ruleBoxes = ['rule-normal', 'rule-brettonia'].map(id => document.getElementById(id));
 ruleBoxes.forEach(box => {

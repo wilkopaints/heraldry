@@ -87,6 +87,12 @@ details summary {
     background: #fafafa;
     max-width: 16em;
 }
+#charge-colours {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6em 1.2em;
+    width: 100%;
+}
 .ctrl-row {
     display: flex;
     align-items: center;
