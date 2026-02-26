@@ -164,22 +164,100 @@ function deviceDisplayName(path) {
                .split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-// Pick device tincture following the rule of tincture:
-// metals (Or, Argent, Cendré) on colours, colours on metals.
+// Rule of tincture: metals (Or, Argent, Cendré) go on colours and vice-versa.
 const metals = new Set(["#d4af34", "#ffffff", "#dbdbdb"]);
 
-function pickDeviceTincture(col1, col2) {
-    const col1IsMetal = metals.has(col1);
-    const candidates = Object.values(colours).filter(c => {
-        if (c === col1 || c === col2) return false;
-        return col1IsMetal ? !metals.has(c) : metals.has(c);
-    });
-    if (candidates.length > 0) {
-        return candidates[Math.floor(Math.random() * candidates.length)];
-    }
-    // Fallback: anything different from the field
+function contrastingTincture(fieldColour, col1, col2) {
+    const fieldIsMetal = metals.has(fieldColour);
+    // Exclude both field colours so the charge can never blend into either half of the field.
+    const pool = Object.values(colours).filter(c =>
+        c !== col1 && c !== col2 && (fieldIsMetal ? !metals.has(c) : metals.has(c))
+    );
+    if (pool.length > 0) return pool[Math.floor(Math.random() * pool.length)];
+    // Fallback: relax the tincture rule, just avoid matching the field.
     const fallback = Object.values(colours).filter(c => c !== col1 && c !== col2);
     return fallback.length > 0 ? fallback[Math.floor(Math.random() * fallback.length)] : "#d4af34";
+}
+
+// Standard heraldic arrangements by charge count.
+function getArrangement(count) {
+    const arr = {
+        0: { positions: [],                                                                                                                                                   size: 0   },
+        1: { positions: [{cx:100,cy:110}],                                                                                                                                    size: 145 },
+        2: { positions: [{cx:60,cy:105},{cx:140,cy:105}],                                                                                                                     size: 85  },
+        3: { positions: [{cx:60,cy:85},{cx:140,cy:85},{cx:100,cy:165}],                                                                                                       size: 80  },
+        4: { positions: [{cx:60,cy:75},{cx:140,cy:75},{cx:60,cy:155},{cx:140,cy:155}],                                                                                        size: 72  },
+        5: { positions: [{cx:60,cy:65},{cx:140,cy:65},{cx:60,cy:150},{cx:140,cy:150},{cx:100,cy:200}],                                                                        size: 65  },
+        6: { positions: [{cx:60,cy:60},{cx:140,cy:60},{cx:60,cy:130},{cx:140,cy:130},{cx:60,cy:195},{cx:140,cy:195}],                                                         size: 60  },
+    };
+    return arr[count] ?? arr[0];
+}
+
+// Returns the field colour (col1 or col2) dominant at point (x,y) for the given division.
+function getFieldColourAt(x, y, shape, col1, col2) {
+    const W = 200, H = 240;
+    switch (shape) {
+        case 'partyPerFess':       return y < H/2 ? col1 : col2;
+        case 'partyPerPale':       return x < W/2 ? col1 : col2;
+        case 'partyPerBendSinister': return (x/W + y/H < 1) ? col1 : col2;
+        case 'quarterly':
+        case 'quarterlyWithHeart': return ((x < W/2) === (y < H/2)) ? col1 : col2;
+        case 'chief':              return y < 60 ? col2 : col1;
+        case 'pale':               return (x >= 70 && x <= 130) ? col2 : col1;
+        case 'fess':               return (y >= 85 && y <= 155) ? col2 : col1;
+        case 'bend': {
+            // parallelogram band; center line y = 1.25x - 5, half-width ≈ 90 pixels
+            return Math.abs(1.25*x - y - 5) < 90 ? col2 : col1;
+        }
+        case 'bendSinister': {
+            return Math.abs(1.25*x + y - 245) < 90 ? col2 : col1;
+        }
+        case 'chevron': {
+            if (x < 100) { const s = x+y; return (s >= 140 && s <= 180) ? col2 : col1; }
+            else          { const d = x-y; return (d >= 20  && d <= 60)  ? col2 : col1; }
+        }
+        case 'cross':    return ((x>=75&&x<=125)||(y>=95&&y<=145)) ? col2 : col1;
+        case 'saltire':  return (Math.abs(y-1.2*x)<30 || Math.abs(y+1.2*x-240)<30) ? col2 : col1;
+        case 'pall': {
+            const inStem  = x>=80 && x<=120 && y>=90;
+            const inLeft  = Math.abs(y - 0.9*x) < 28 && x<100 && y<90;
+            const inRight = Math.abs(y + 0.9*x - 180) < 28 && x>100 && y<90;
+            return (inStem||inLeft||inRight) ? col2 : col1;
+        }
+        case 'flaunches': {
+            const inLeft  = ((x+10)**2/6400  + (y-120)**2/19600) <= 1;
+            const inRight = ((x-210)**2/6400 + (y-120)**2/19600) <= 1;
+            return (inLeft||inRight) ? col2 : col1;
+        }
+        case 'pile':    return (x >= y/2.4 && x <= (480-y)/2.4) ? col2 : col1;
+        case 'bordure': {
+            if (x<18||x>182||y<18) return col2;
+            if (y>=130 && ((x-100)**2/6400+(y-180)**2/4000) > 1) return col2;
+            return col1;
+        }
+        case 'barry':     return Math.floor(y/40) % 2 === 0 ? col1 : col2;
+        case 'pally':     return Math.floor(x/40) % 2 === 0 ? col1 : col2;
+        case 'bendy': {
+            const dx = x-100, dy = y-120;
+            const ru = (Math.SQRT2/2)*dx + (Math.SQRT2/2)*dy;
+            return Math.floor((ru+1000)/28) % 2 === 0 ? col1 : col2;
+        }
+        case 'chevronny': {
+            const v = ((y + Math.abs(x-100)) % 55 + 55) % 55;
+            return v < 30 ? col2 : col1;
+        }
+        case 'chequy':  return (Math.floor(x/20)+Math.floor(y/20)) % 2 === 0 ? col1 : col2;
+        case 'lozengy': {
+            const u = ((x+y)%40+40)%40, v = ((x-y)%40+40)%40;
+            return (Math.abs(u-20)+Math.abs(v-20) <= 20) ? col2 : col1;
+        }
+        case 'gyronny': {
+            const angle = Math.atan2(y-120, x-100);
+            const sector = Math.floor(((angle+Math.PI)/(Math.PI/3)+6)) % 6;
+            return sector % 2 === 0 ? col1 : col2;
+        }
+        default: return col1;
+    }
 }
 
 // Returns { defs, content } — SVG fragments for the heraldic field division
@@ -344,46 +422,65 @@ function generateDivision(shape, col1, col2) {
     }
 }
 
-function generateShieldSVG(device, col1, col2, shape, devColour) {
-    const shieldPath = "M 0,0 L 200,0 L 200,140 C 200,190 160,220 100,240 C 40,220 0,190 0,140 Z";
-    const { defs, content } = generateDivision(shape, col1, col2);
-
-    // SVG filter: extracts dark areas of the device image and recolours them to devColour.
-    // Works for both black-on-white and black-on-transparent PNGs.
-    const deviceFilter = `
-    <filter id="dev-color" color-interpolation-filters="sRGB">
+// Build one SVG recolouring filter per unique tincture used by the symbols.
+// Each filter also adds a thin dark outline by dilating the charge mask before
+// compositing the charge colour on top.
+function deviceFilterDefs(tinctures) {
+    return [...new Set(tinctures)].map(t => {
+        const id = `dev-${t.replace('#','')}`;
+        return `<filter id="${id}" color-interpolation-filters="sRGB" x="-5%" y="-5%" width="110%" height="110%">
       <feColorMatrix type="matrix"
-          values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -1 -1 -1 0 3"
+          values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -5 -5 -5 0 8"
           in="SourceGraphic" result="darkMask"/>
       <feComposite in="darkMask" in2="SourceGraphic" operator="in" result="mask"/>
-      <feFlood flood-color="${devColour}" result="color"/>
-      <feComposite in="color" in2="mask" operator="in"/>
+      <feMorphology in="mask" operator="dilate" radius="0.5" result="dilated"/>
+      <feFlood flood-color="#000000" flood-opacity="1" result="outlineFlood"/>
+      <feComposite in="outlineFlood" in2="dilated" operator="in" result="outline"/>
+      <feFlood flood-color="${t}" result="chargeFlood"/>
+      <feComposite in="chargeFlood" in2="mask" operator="in" result="charge"/>
+      <feMerge>
+        <feMergeNode in="outline"/>
+        <feMergeNode in="charge"/>
+      </feMerge>
     </filter>`;
+    }).join('\n');
+}
+
+// symbols: array of { cx, cy, size, tincture }
+function generateShieldSVG(device, col1, col2, shape, symbols) {
+    const shieldPath = "M 0,0 L 200,0 L 200,140 C 200,190 160,220 100,240 C 40,220 0,190 0,140 Z";
+    const { defs, content } = generateDivision(shape, col1, col2);
+    const filterDefs = deviceFilterDefs(symbols.map(s => s.tincture));
+
+    const images = symbols.map(({ cx, cy, size, tincture }) => {
+        const h = size / 2;
+        return `<image href="${device}" x="${cx-h}" y="${cy-h}" width="${size}" height="${size}"
+      clip-path="url(#shield-clip)" filter="url(#dev-${tincture.replace('#','')})"/>`;
+    }).join('\n  ');
 
     return `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" aria-label="Heraldic shield">
   <defs>
     <clipPath id="shield-clip">
       <path d="${shieldPath}"/>
     </clipPath>
-    ${deviceFilter}
+    ${filterDefs}
     ${defs}
   </defs>
   <g clip-path="url(#shield-clip)">
     ${content}
   </g>
-  <image href="${device}" x="20" y="25" width="160" height="160"
-      clip-path="url(#shield-clip)" filter="url(#dev-color)"/>
+  ${images}
   <path d="${shieldPath}" fill="none" stroke="#1a1a1a" stroke-width="4" stroke-linejoin="round"/>
 </svg>`;
 }
 
-function generateCaption(device, col1, col2, shape, devColour) {
-    return `<p class="shield-caption">
-        <span class="swatch" style="background:${col1}"></span>${colourNames[col1]}
-        &amp; <span class="swatch" style="background:${col2}"></span>${colourNames[col2]}
-        &ndash; ${shapeNames[shape] || shape}
-        &ndash; <span class="swatch" style="background:${devColour}"></span>${deviceDisplayName(device)}
-    </p>`;
+function generateCaption(device, col1, col2, shape, symbols) {
+    const parts = [
+        `<span class="swatch" style="background:${col1}"></span>${colourNames[col1]} &amp; <span class="swatch" style="background:${col2}"></span>${colourNames[col2]}`,
+        shapeNames[shape] || shape,
+    ];
+    if (symbols.length > 0) parts.push(`${symbols.length}\u00d7 ${deviceDisplayName(device)}`);
+    return `<p class="shield-caption">${parts.join(' &ndash; ')}</p>`;
 }
 
 const updateHeraldry = () => {
@@ -391,9 +488,14 @@ const updateHeraldry = () => {
     const colourOne = randomColour();
     const colourTwo = randomColour();
     const shape = shapes[Math.floor(Math.random() * Object.keys(shapes).length)];
-    const devColour = pickDeviceTincture(colourOne, colourTwo);
-    heraldry.innerHTML = generateShieldSVG(device, colourOne, colourTwo, shape, devColour)
-                       + generateCaption(device, colourOne, colourTwo, shape, devColour);
+    const count = Math.floor(Math.random() * 7); // 0–6 charges
+    const { positions, size } = getArrangement(count);
+    const symbols = positions.map(({ cx, cy }) => ({
+        cx, cy, size,
+        tincture: contrastingTincture(getFieldColourAt(cx, cy, shape, colourOne, colourTwo), colourOne, colourTwo),
+    }));
+    heraldry.innerHTML = generateShieldSVG(device, colourOne, colourTwo, shape, symbols)
+                       + generateCaption(device, colourOne, colourTwo, shape, symbols);
 };
 
 updateHeraldry();
