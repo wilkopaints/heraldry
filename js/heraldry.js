@@ -96,8 +96,7 @@ var shapes = {
     1: "partyPerPale",
     2: "partyPerBendSinister",
     3: "quarterly",
-    4: "quarterlyWithHeart",
-    5: "chief",
+    4: "chief",
     6: "pale",
     7: "fess",
     8: "bend",
@@ -136,7 +135,6 @@ const shapeNames = {
     "partyPerPale": "Party per Pale",
     "partyPerBendSinister": "Party per Bend Sinister",
     "quarterly": "Quarterly",
-    "quarterlyWithHeart": "Quarterly",
     "chief": "Chief",
     "pale": "Pale",
     "fess": "Fess",
@@ -216,11 +214,11 @@ function getArrangement(count) {
     const arr = {
         0: { positions: [],                                                                                                                                                   size: 0   },
         1: { positions: [{cx:100,cy:110}],                                                                                                                                    size: 145 },
-        2: { positions: [{cx:60,cy:105},{cx:140,cy:105}],                                                                                                                     size: 85  },
-        3: { positions: [{cx:60,cy:85},{cx:140,cy:85},{cx:100,cy:165}],                                                                                                       size: 80  },
-        4: { positions: [{cx:60,cy:75},{cx:140,cy:75},{cx:60,cy:155},{cx:140,cy:155}],                                                                                        size: 72  },
-        5: { positions: [{cx:60,cy:65},{cx:140,cy:65},{cx:60,cy:150},{cx:140,cy:150},{cx:100,cy:200}],                                                                        size: 65  },
-        6: { positions: [{cx:60,cy:60},{cx:140,cy:60},{cx:60,cy:130},{cx:140,cy:130},{cx:60,cy:195},{cx:140,cy:195}],                                                         size: 60  },
+        2: { positions: [{cx:60,cy:105},{cx:140,cy:105}],                                                                                                                     size: 75  },
+        3: { positions: [{cx:60,cy:75},{cx:140,cy:75},{cx:100,cy:155}],                                                                                                       size: 70  },
+        4: { positions: [{cx:60,cy:65},{cx:140,cy:65},{cx:60,cy:145},{cx:140,cy:145}],                                                                                        size: 62  },
+        5: { positions: [{cx:60,cy:55},{cx:140,cy:55},{cx:60,cy:120},{cx:140,cy:120},{cx:100,cy:180}],                                                                        size: 57  },
+        6: { positions: [{cx:60,cy:50},{cx:140,cy:50},{cx:60,cy:105},{cx:140,cy:105},{cx:60,cy:160},{cx:140,cy:160}],                                                         size: 52  },
     };
     return arr[count] ?? arr[0];
 }
@@ -232,8 +230,7 @@ function getFieldColourAt(x, y, shape, col1, col2) {
         case 'partyPerFess':       return y < H/2 ? col1 : col2;
         case 'partyPerPale':       return x < W/2 ? col1 : col2;
         case 'partyPerBendSinister': return (x/W + y/H < 1) ? col1 : col2;
-        case 'quarterly':
-        case 'quarterlyWithHeart': return ((x < W/2) === (y < H/2)) ? col1 : col2;
+        case 'quarterly': return ((x < W/2) === (y < H/2)) ? col1 : col2;
         case 'chief':              return y < 60 ? col2 : col1;
         case 'pale':               return (x >= 70 && x <= 130) ? col2 : col1;
         case 'fess':               return (y >= 85 && y <= 155) ? col2 : col1;
@@ -367,7 +364,6 @@ function generateDivision(shape, col1, col2) {
                 <polygon points="${W},0 ${W},${H} 0,${H}" fill="${col2}"/>` };
 
         case 'quarterly':
-        case 'quarterlyWithHeart':
             return { defs: '', content: `
                 <rect x="0" y="0" width="${W/2}" height="${H/2}" fill="${col1}"/>
                 <rect x="${W/2}" y="0" width="${W/2}" height="${H/2}" fill="${col2}"/>
@@ -506,20 +502,11 @@ function generateDivision(shape, col1, col2) {
 function deviceFilterDefs(tinctures) {
     return [...new Set(tinctures)].map(t => {
         const id = `dev-${t.replace('#','')}`;
+        // multiply blend: black pixels stay black (outline), white pixels become tincture colour
         return `<filter id="${id}" color-interpolation-filters="sRGB" x="-5%" y="-5%" width="110%" height="110%">
-      <feColorMatrix type="matrix"
-          values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -5 -5 -5 0 8"
-          in="SourceGraphic" result="darkMask"/>
-      <feComposite in="darkMask" in2="SourceGraphic" operator="in" result="mask"/>
-      <feMorphology in="mask" operator="dilate" radius="0.5" result="dilated"/>
-      <feFlood flood-color="#000000" flood-opacity="1" result="outlineFlood"/>
-      <feComposite in="outlineFlood" in2="dilated" operator="in" result="outline"/>
-      <feFlood flood-color="${t}" result="chargeFlood"/>
-      <feComposite in="chargeFlood" in2="mask" operator="in" result="charge"/>
-      <feMerge>
-        <feMergeNode in="outline"/>
-        <feMergeNode in="charge"/>
-      </feMerge>
+      <feFlood flood-color="${t}" result="colour"/>
+      <feBlend in="colour" in2="SourceGraphic" mode="multiply" result="blended"/>
+      <feComposite in="blended" in2="SourceGraphic" operator="in"/>
     </filter>`;
     }).join('\n');
 }
