@@ -9,110 +9,136 @@
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
-    <h1>Heraldry Generator</h1>
-    <form>
-      <div class="generator">
-        <input type="submit" value="Randomise" />
+    <header id="header">
+      <a href="https://wilkopaints.art/" class="logo"
+        ><strong>Wilko Paints</strong></a
+      >
+      <nav>
+        <a href="#menu">Menu</a>
+      </nav>
+    </header>
+
+    <nav id="menu">
+      <div class="inner">
+        <ul class="links">
+          <li><a href="https://wilkopaints.art/">Home</a></li>
+          <li><a href="https://wilkopaints.art/all_posts">All Posts</a></li>
+          <li><a href="./">Heraldry Generator</a></li>
+        </ul>
       </div>
-      <div class="rules">
-        <label
-          ><input type="checkbox" id="rule-normal" checked /> Normal heraldry
-          rules</label
-        >
-        <label
-          ><input type="checkbox" id="rule-brettonia" /> Bretonnian rules</label
-        >
-      </div>
-      <details>
-        <summary>Tweak</summary>
-        <div class="controls" id="controls">
-          <label class="ctrl-label"
-            >Division
-            <select id="ctrl-shape"></select>
-          </label>
-          <label class="ctrl-label"
-            >Colour 1
-            <span class="ctrl-row">
-              <span class="ctrl-swatch" id="swatch-col1"></span>
-              <select id="ctrl-col1"></select>
-            </span>
-          </label>
-          <label class="ctrl-label"
-            >Colour 2
-            <span class="ctrl-row">
-              <span class="ctrl-swatch" id="swatch-col2"></span>
-              <select id="ctrl-col2"></select>
-            </span>
-          </label>
-          <label class="ctrl-label"
-            >Charges
-            <select id="ctrl-count"></select>
-          </label>
-          <label class="ctrl-label" id="layout-label" style="display: none"
-            >Layout
-            <select id="ctrl-layout">
-              <option value="division">Division</option>
-              <option value="standard">Standard</option>
-            </select>
-          </label>
-          <label class="ctrl-label"
-            >Device
-            <select id="ctrl-device"></select>
-          </label>
-          <div id="charge-colours"></div>
+      <a class="close" href="#menu">Close</a>
+    </nav>
+
+    <main id="main">
+      <h1>Heraldry Generator</h1>
+      <form>
+        <div class="generator">
+          <input type="submit" value="Randomise" />
         </div>
+        <div class="rules">
+          <label
+            ><input type="checkbox" id="rule-normal" checked /> Normal heraldry
+            rules</label
+          >
+          <label
+            ><input type="checkbox" id="rule-brettonia" /> Bretonnian
+            rules</label
+          >
+        </div>
+        <details>
+          <summary>Tweak</summary>
+          <div class="controls" id="controls">
+            <label class="ctrl-label"
+              >Division
+              <select id="ctrl-shape"></select>
+            </label>
+            <label class="ctrl-label"
+              >Colour 1
+              <span class="ctrl-row">
+                <span class="ctrl-swatch" id="swatch-col1"></span>
+                <select id="ctrl-col1"></select>
+              </span>
+            </label>
+            <label class="ctrl-label"
+              >Colour 2
+              <span class="ctrl-row">
+                <span class="ctrl-swatch" id="swatch-col2"></span>
+                <select id="ctrl-col2"></select>
+              </span>
+            </label>
+            <label class="ctrl-label"
+              >Charges
+              <select id="ctrl-count"></select>
+            </label>
+            <label class="ctrl-label" id="layout-label" style="display: none"
+              >Layout
+              <select id="ctrl-layout">
+                <option value="division">Division</option>
+                <option value="standard">Standard</option>
+              </select>
+            </label>
+            <label class="ctrl-label"
+              >Device
+              <select id="ctrl-device"></select>
+            </label>
+            <div id="charge-colours"></div>
+          </div>
+        </details>
+        <div id="heraldry"></div>
+      </form>
+      <script>
+        if (navigator.serviceWorker) {
+          navigator.serviceWorker.register("/heraldry/sw.js", {
+            scope: "/heraldry/",
+          });
+        }
+      </script>
+      <details class="attribution">
+        <summary>Attribution</summary>
+        <ul>
+          <li>
+            The app logo is the
+            <a
+              href="https://commons.wikimedia.org/wiki/File:Blason_Carcassonne_Ville_Haute_11.svg"
+              >Blason Carcassonne Ville Haute 11</a
+            >
+            by
+            <a
+              href="https://commons.wikimedia.org/wiki/User_talk:Manassas~commonswiki"
+              >Manassas</a
+            >
+            under
+            <a href="https://creativecommons.org/licenses/by-sa/3.0/deed.en"
+              >CC BY-SA 3.0</a
+            >
+          </li>
+          <li>
+            Thanks to <a href="https://github.com/codepo8/">codepo8</a>'s
+            <a href="https://github.com/codepo8/github-page-pwa"
+              >guide on setting up a PWA</a
+            >
+          </li>
+          <li>
+            All heraldic devices come from the
+            <a href="https://heraldicart.org/"
+              >Book of Traceable Heraldic Art</a
+            >
+            which is licensed as follows: "Images have been drawn from a variety
+            of sources from early, medieval, and modern sources, with
+            attribution to the original artists wherever possible. Most of the
+            art is either covered by a Creative Commons license or in the public
+            domain, and all items may be used freely for any non-commercial use
+            related to the SCA."
+          </li>
+          <li>
+            Geometric cross SVGs adapted from Wikimedia Commons heraldry
+            collection
+          </li>
+        </ul>
       </details>
-      <div id="heraldry"></div>
-    </form>
-    <script>
-      if (navigator.serviceWorker) {
-        navigator.serviceWorker.register("/heraldry/sw.js", {
-          scope: "/heraldry/",
-        });
-      }
-    </script>
-    <details class="attribution">
-      <summary>Attribution</summary>
-      <ul>
-        <li>
-          The app logo is the
-          <a
-            href="https://commons.wikimedia.org/wiki/File:Blason_Carcassonne_Ville_Haute_11.svg"
-            >Blason Carcassonne Ville Haute 11</a
-          >
-          by
-          <a
-            href="https://commons.wikimedia.org/wiki/User_talk:Manassas~commonswiki"
-            >Manassas</a
-          >
-          under
-          <a href="https://creativecommons.org/licenses/by-sa/3.0/deed.en"
-            >CC BY-SA 3.0</a
-          >
-        </li>
-        <li>
-          Thanks to <a href="https://github.com/codepo8/">codepo8</a>'s
-          <a href="https://github.com/codepo8/github-page-pwa"
-            >guide on setting up a PWA</a
-          >
-        </li>
-        <li>
-          All heraldic devices come from the
-          <a href="https://heraldicart.org/">Book of Traceable Heraldic Art</a>
-          which is licensed as follows: "Images have been drawn from a variety
-          of sources from early, medieval, and modern sources, with attribution
-          to the original artists wherever possible. Most of the art is either
-          covered by a Creative Commons license or in the public domain, and all
-          items may be used freely for any non-commercial use related to the
-          SCA."
-        </li>
-        <li>
-          Geometric cross SVGs adapted from Wikimedia Commons heraldry
-          collection
-        </li>
-      </ul>
-    </details>
+    </main>
     <script src="js/device-dims.js"></script>
     <script src="js/heraldry.js"></script>
+    <script src="js/menu.js"></script>
   </body>
 </html>
