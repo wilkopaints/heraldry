@@ -268,7 +268,8 @@ a:hover {
   margin: 1em 0;
 }
 
-input[type="submit"] {
+input[type="submit"],
+button {
   appearance: none;
   background-color: transparent;
   border: solid 2px var(--fg);
@@ -290,13 +291,15 @@ input[type="submit"] {
     color 0.2s ease-in-out;
 }
 
-input[type="submit"]:hover {
+input[type="submit"]:hover,
+button:hover {
   box-shadow: inset 0 0 0 2px var(--highlight);
   border-color: var(--highlight);
   color: var(--highlight);
 }
 
-input[type="submit"]:active {
+input[type="submit"]:active,
+button:active {
   background-color: rgba(155, 241, 255, 0.15);
 }
 
