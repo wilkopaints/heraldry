@@ -14,12 +14,6 @@ function mulberry32(seed) {
 function random() {
   return seededRandom ? seededRandom() : Math.random();
 }
-function seedToId(seed) {
-  return seed.toString(36).toUpperCase().padStart(7, "0");
-}
-function idToSeed(id) {
-  return parseInt(id, 36);
-}
 
 // Get all devices for indexing
 function getAllDevices() {
@@ -56,9 +50,6 @@ function encodeState() {
 
 // Decode state from URL hash
 function decodeState(hash) {
-  // Skip if it looks like a seed ID (all alphanumeric, 7 chars)
-  if (/^[A-Z0-9]{1,7}$/i.test(hash)) return null;
-
   const parts = hash.split("-");
   if (parts.length < 6) return null;
 
@@ -81,7 +72,6 @@ function decodeState(hash) {
 // Update URL hash with current state
 function updateHashFromControls() {
   const hash = encodeState();
-  document.getElementById("seed-display").value = "";
   history.replaceState(null, "", "#" + hash);
 }
 // Better solution to this for static page?
@@ -1796,10 +1786,8 @@ const updateHeraldry = (seed) => {
   updateLayoutDropdown();
   renderFromControls();
 
-  // Update seed display and URL
-  const id = seedToId(seed);
-  document.getElementById("seed-display").value = id;
-  history.replaceState(null, "", "#" + id);
+  // Update URL hash with config-based format
+  updateHashFromControls();
   seededRandom = null; // Reset to use Math.random for manual tweaks
 };
 
@@ -1827,7 +1815,6 @@ populateControls();
 function loadFromHash() {
   const hash = location.hash.slice(1);
   if (hash) {
-    // Try config-based hash first
     const state = decodeState(hash);
     if (state) {
       document.getElementById("ctrl-shape").value = state.shape;
@@ -1843,13 +1830,6 @@ function loadFromHash() {
         state.chargeCols.map((c) => "#" + c),
       );
       renderFromControls();
-      document.getElementById("seed-display").value = "";
-      return;
-    }
-    // Try seed-based hash
-    const seed = idToSeed(hash.toUpperCase());
-    if (!isNaN(seed) && seed >= 0) {
-      updateHeraldry(seed);
       return;
     }
   }
@@ -1958,27 +1938,6 @@ function svgToDataUrl(svgEl) {
     "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(data)))
   );
 }
-
-document.getElementById("load-seed").addEventListener("click", () => {
-  const input = document
-    .getElementById("seed-display")
-    .value.trim()
-    .toUpperCase();
-  if (!input) return;
-  const seed = idToSeed(input);
-  if (isNaN(seed) || seed < 0) {
-    alert("Invalid seed ID");
-    return;
-  }
-  updateHeraldry(seed);
-});
-
-document.getElementById("seed-display").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    document.getElementById("load-seed").click();
-  }
-});
 
 document.getElementById("save-png").addEventListener("click", async () => {
   try {
