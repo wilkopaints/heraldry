@@ -1,5 +1,25 @@
 const form = document.querySelector("form");
 const heraldry = document.querySelector("#heraldry");
+
+// Seeded PRNG (mulberry32)
+let seededRandom = null;
+function mulberry32(seed) {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function random() {
+  return seededRandom ? seededRandom() : random();
+}
+function seedToId(seed) {
+  return seed.toString(36).toUpperCase().padStart(7, "0");
+}
+function idToSeed(id) {
+  return parseInt(id, 36);
+}
 // Better solution to this for static page?
 const deviceList = [
   "img/devices/boar-rampant.png",
@@ -182,7 +202,7 @@ const bretonnianFavouredDevices = [
 function randomColour() {
   const excludes = isBretonnian() ? bretonnianExcluded : [];
   const pool = Object.values(colours).filter((c) => !excludes.includes(c));
-  return pool[Math.floor(Math.random() * pool.length)];
+  return pool[Math.floor(random() * pool.length)];
 }
 
 const geometricCharges = [
@@ -234,10 +254,10 @@ function randomDevice() {
       ...deviceList,
       ...bretonnianFavouredDevices.flatMap((d) => Array(3).fill(d)),
     ];
-    return pool[Math.floor(Math.random() * pool.length)];
+    return pool[Math.floor(random() * pool.length)];
   }
   const allDevices = [...geometricCharges, ...deviceList];
-  return allDevices[Math.floor(Math.random() * allDevices.length)];
+  return allDevices[Math.floor(random() * allDevices.length)];
 }
 
 function deviceDisplayName(path) {
@@ -261,12 +281,12 @@ function contrastingTincture(fieldColour, col1, col2) {
     if (isNormalRules()) return fieldIsMetal ? !metals.has(c) : metals.has(c);
     return true;
   });
-  if (pool.length > 0) return pool[Math.floor(Math.random() * pool.length)];
+  if (pool.length > 0) return pool[Math.floor(random() * pool.length)];
   const fallback = Object.values(colours).filter(
     (c) => c !== col1 && c !== col2 && !excludes.includes(c),
   );
   return fallback.length > 0
-    ? fallback[Math.floor(Math.random() * fallback.length)]
+    ? fallback[Math.floor(random() * fallback.length)]
     : "#d4af34";
 }
 
@@ -1446,12 +1466,21 @@ function renderFromControls() {
     generateCaption(device, col1, col2, shape, symbols);
 }
 
-const updateHeraldry = () => {
+let currentSeed = null;
+
+const updateHeraldry = (seed) => {
+  // Generate or use provided seed
+  if (seed === undefined) {
+    seed = Math.floor(Math.random() * 2147483647);
+  }
+  currentSeed = seed;
+  seededRandom = mulberry32(seed);
+
   const device = randomDevice();
   const col1 = randomColour();
   const col2 = randomColour();
-  const shape = shapes[Math.floor(Math.random() * Object.keys(shapes).length)];
-  const count = Math.floor(Math.random() * 7);
+  const shape = shapes[Math.floor(random() * Object.keys(shapes).length)];
+  const count = Math.floor(random() * 7);
   const { positions } = getArrangement(count, shape);
   const tinctures = positions.map(({ cx, cy }) =>
     contrastingTincture(
@@ -1464,6 +1493,12 @@ const updateHeraldry = () => {
   document.getElementById("ctrl-layout").value = "division";
   updateLayoutDropdown();
   renderFromControls();
+
+  // Update seed display and URL
+  const id = seedToId(seed);
+  document.getElementById("seed-display").value = id;
+  history.replaceState(null, "", "#" + id);
+  seededRandom = null; // Reset to use Math.random for manual tweaks
 };
 
 function recomputeChargeColours() {
@@ -1485,7 +1520,23 @@ function recomputeChargeColours() {
 }
 
 populateControls();
-updateHeraldry();
+
+// Load from URL hash or generate random
+function loadFromHash() {
+  const hash = location.hash.slice(1).toUpperCase();
+  if (hash) {
+    const seed = idToSeed(hash);
+    if (!isNaN(seed) && seed >= 0) {
+      updateHeraldry(seed);
+      return;
+    }
+  }
+  updateHeraldry();
+}
+loadFromHash();
+
+window.addEventListener("hashchange", loadFromHash);
+
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   updateHeraldry();
@@ -1533,7 +1584,7 @@ ruleBoxes.forEach((box) => {
           const otherId = id === "ctrl-col1" ? "ctrl-col2" : "ctrl-col1";
           const other = document.getElementById(otherId).value;
           const pool = validColours.filter((c) => c !== other);
-          sel.value = pool[Math.floor(Math.random() * pool.length)];
+          sel.value = pool[Math.floor(random() * pool.length)];
         }
       });
       updateSwatches();
@@ -1541,4 +1592,184 @@ ruleBoxes.forEach((box) => {
     recomputeChargeColours();
     renderFromControls();
   });
+});
+
+// Save as PNG functionality
+async function loadImage(src) {
+  // For data URLs, load directly
+  if (src.startsWith("data:")) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Failed to load data URL"));
+      img.src = src;
+    });
+  }
+  // For file URLs, fetch as blob to avoid tainted canvas
+  const response = await fetch(src);
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load: " + src));
+    };
+    img.src = url;
+  });
+}
+
+function svgToDataUrl(svgEl) {
+  const clone = svgEl.cloneNode(true);
+  clone.setAttribute("width", 200);
+  clone.setAttribute("height", 240);
+  const data = new XMLSerializer().serializeToString(clone);
+  return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(data)));
+}
+
+document.getElementById("load-seed").addEventListener("click", () => {
+  const input = document.getElementById("seed-display").value.trim().toUpperCase();
+  if (!input) return;
+  const seed = idToSeed(input);
+  if (isNaN(seed) || seed < 0) {
+    alert("Invalid seed ID");
+    return;
+  }
+  updateHeraldry(seed);
+});
+
+document.getElementById("seed-display").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    document.getElementById("load-seed").click();
+  }
+});
+
+document.getElementById("save-png").addEventListener("click", async () => {
+  try {
+  const svg = heraldry.querySelector("svg");
+  if (!svg) return;
+
+  const scale = 4;
+  const width = 200;
+  const height = 240;
+  const canvas = document.createElement("canvas");
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(scale, scale);
+
+  // Get image elements and their attributes before removing
+  const imageEls = svg.querySelectorAll("image");
+  const imageData = Array.from(imageEls).map((img) => ({
+    href: img.getAttribute("href"),
+    x: parseFloat(img.getAttribute("x")),
+    y: parseFloat(img.getAttribute("y")),
+    width: parseFloat(img.getAttribute("width")),
+    height: parseFloat(img.getAttribute("height")),
+    filter: img.getAttribute("filter"),
+  }));
+
+  // Create SVG without images for base rendering
+  const svgClone = svg.cloneNode(true);
+  svgClone.querySelectorAll("image").forEach((img) => img.remove());
+
+  // Draw base shield
+  const baseImg = await loadImage(svgToDataUrl(svgClone));
+  ctx.drawImage(baseImg, 0, 0, width, height);
+
+  // Create clipping path matching the shield
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(200, 0);
+  ctx.lineTo(200, 110);
+  ctx.bezierCurveTo(200, 180, 160, 230, 100, 240);
+  ctx.bezierCurveTo(40, 230, 0, 180, 0, 110);
+  ctx.closePath();
+  ctx.clip();
+
+  // Draw each device image
+  for (const data of imageData) {
+    if (!data.href) continue;
+    try {
+      const deviceImg = await loadImage(data.href);
+
+      // Apply color filter by drawing to temp canvas
+      if (data.filter) {
+        const match = data.filter.match(/url\(#dev-([a-fA-F0-9]+)\)/);
+        if (match) {
+          const color = "#" + match[1];
+          const tempCanvas = document.createElement("canvas");
+          tempCanvas.width = data.width * scale;
+          tempCanvas.height = data.height * scale;
+          const tempCtx = tempCanvas.getContext("2d");
+          tempCtx.scale(scale, scale);
+
+          if (color === "#000000") {
+            // Black tincture: invert the image (black outline becomes white, white fill becomes black)
+            tempCtx.drawImage(deviceImg, 0, 0, data.width, data.height);
+            const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            const pixels = imageData.data;
+            for (let i = 0; i < pixels.length; i += 4) {
+              pixels[i] = 255 - pixels[i];       // R
+              pixels[i + 1] = 255 - pixels[i + 1]; // G
+              pixels[i + 2] = 255 - pixels[i + 2]; // B
+              // Alpha stays the same
+            }
+            tempCtx.putImageData(imageData, 0, 0);
+          } else {
+            // Fill with tincture color first
+            tempCtx.fillStyle = color;
+            tempCtx.fillRect(0, 0, data.width, data.height);
+
+            // Multiply blend: white becomes color, black stays black
+            tempCtx.globalCompositeOperation = "multiply";
+            tempCtx.drawImage(deviceImg, 0, 0, data.width, data.height);
+
+            // Use original image alpha to mask out background
+            tempCtx.globalCompositeOperation = "destination-in";
+            tempCtx.drawImage(deviceImg, 0, 0, data.width, data.height);
+          }
+
+          ctx.drawImage(tempCanvas, data.x, data.y, data.width, data.height);
+          continue;
+        }
+      }
+      ctx.drawImage(deviceImg, data.x, data.y, data.width, data.height);
+    } catch (e) {
+      console.warn("Failed to load device image:", data.href, e);
+    }
+  }
+
+  ctx.restore();
+
+  // Redraw shield border on top
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(200, 0);
+  ctx.lineTo(200, 110);
+  ctx.bezierCurveTo(200, 180, 160, 230, 100, 240);
+  ctx.bezierCurveTo(40, 230, 0, 180, 0, 110);
+  ctx.closePath();
+  ctx.strokeStyle = "#1a1a1a";
+  ctx.lineWidth = 4;
+  ctx.lineJoin = "round";
+  ctx.stroke();
+
+  canvas.toBlob((blob) => {
+    const link = document.createElement("a");
+    link.download = "heraldry.png";
+    link.href = URL.createObjectURL(blob);
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }, "image/png");
+  } catch (e) {
+    console.error("Save PNG failed:", e);
+    alert("Failed to save PNG: " + e.message);
+  }
 });
