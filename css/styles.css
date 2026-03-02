@@ -264,8 +264,30 @@ a:hover {
 .generator {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.6em;
   margin: 1em 0;
+}
+
+#seed-display {
+  appearance: none;
+  font-family: monospace;
+  font-size: 0.9em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0 0.75em;
+  height: 2.75em;
+  width: 7em;
+  border: solid 2px var(--border);
+  background: var(--border-bg);
+  color: var(--fg);
+  text-align: center;
+}
+
+#seed-display:focus {
+  outline: none;
+  border-color: var(--highlight);
 }
 
 input[type="submit"],
