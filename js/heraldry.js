@@ -12,7 +12,7 @@ function mulberry32(seed) {
   };
 }
 function random() {
-  return seededRandom ? seededRandom() : random();
+  return seededRandom ? seededRandom() : Math.random();
 }
 function seedToId(seed) {
   return seed.toString(36).toUpperCase().padStart(7, "0");
@@ -20,8 +20,77 @@ function seedToId(seed) {
 function idToSeed(id) {
   return parseInt(id, 36);
 }
+
+// Get all devices for indexing
+function getAllDevices() {
+  return [...geometricCharges, ...deviceList];
+}
+
+// Encode current control state to URL hash
+// Format: shape-col1-col2-device-count-layout-chargeCols
+// Example: chief-d4af34-790000-12-3-d-d4af34-790000
+function encodeState() {
+  const shape = document.getElementById("ctrl-shape").value;
+  const col1 = document.getElementById("ctrl-col1").value.slice(1);
+  const col2 = document.getElementById("ctrl-col2").value.slice(1);
+  const device = document.getElementById("ctrl-device").value;
+  const count = document.getElementById("ctrl-count").value;
+  const layout =
+    document.getElementById("ctrl-layout").value === "division" ? "d" : "s";
+
+  // Get device index
+  const devices = getAllDevices();
+  const deviceIdx = devices.indexOf(device);
+
+  // Get charge colours
+  const chargeCols = [];
+  for (let i = 0; i < parseInt(count); i++) {
+    const sel = document.getElementById(`charge-col-${i}`);
+    if (sel) chargeCols.push(sel.value.slice(1));
+  }
+
+  const parts = [shape, col1, col2, deviceIdx, count, layout];
+  if (chargeCols.length > 0) parts.push(chargeCols.join("."));
+  return parts.join("-");
+}
+
+// Decode state from URL hash
+function decodeState(hash) {
+  // Skip if it looks like a seed ID (all alphanumeric, 7 chars)
+  if (/^[A-Z0-9]{1,7}$/i.test(hash)) return null;
+
+  const parts = hash.split("-");
+  if (parts.length < 6) return null;
+
+  const [shape, col1, col2, deviceIdx, count, layout, ...rest] = parts;
+  const devices = getAllDevices();
+  const device = devices[parseInt(deviceIdx)] || devices[0];
+  const chargeCols = rest.length > 0 ? rest.join("-").split(".") : [];
+
+  return {
+    shape,
+    col1,
+    col2,
+    device,
+    count,
+    layout: layout === "d" ? "division" : "standard",
+    chargeCols,
+  };
+}
+
+// Update URL hash with current state
+function updateHashFromControls() {
+  const hash = encodeState();
+  document.getElementById("seed-display").value = "";
+  history.replaceState(null, "", "#" + hash);
+}
 // Better solution to this for static page?
 const deviceList = [
+  "img/devices/axe.png",
+  "img/devices/balance.png",
+  "img/devices/basilisk-sejant.png",
+  "img/devices/battle-axe.png",
+  "img/devices/boar.png",
   "img/devices/boar-rampant.png",
   "img/devices/boars-head-erased.png",
   "img/devices/bulls-head-cabossed.png",
@@ -95,50 +164,52 @@ const deviceList = [
   "img/devices/unicorn-rampant-regardant.png",
   "img/devices/wings-conjoined-in-lure.png",
   "img/devices/wyvern-erect-inflamed.png",
-  "img/devices/axe.png",
-  "img/devices/balance.png",
-  "img/devices/basilisk-sejant.png",
-  "img/devices/battle-axe.png",
-  "img/devices/boar.png",
 ];
 
 var colours = {
   0: "#d4af34", // or
   1: "#ffffff", // argent
   2: "#3953a4", // azure
-  3: "#790000", //gules
-  4: "#000000", //sable
+  3: "#790000", // gules
+  4: "#000000", // sable
   5: "#11671d", // vert
   6: "#dbdbdb", // cendree
   7: "#7b3f8c", // purpure
 };
 
 var shapes = {
-  0: "partyPerFess",
-  1: "partyPerPale",
-  2: "partyPerBendSinister",
-  3: "quarterly",
-  4: "chief",
-  6: "pale",
-  7: "fess",
-  8: "bend",
-  9: "bendSinister",
-  10: "chevron",
+  0: "barry",
+  1: "base",
+  2: "bend",
+  3: "bendSinister",
+  4: "bendy",
+  5: "bordure",
+  6: "canton",
+  7: "chequy",
+  8: "chevron",
+  9: "chevronny",
+  10: "chief",
   11: "cross",
-  12: "saltire",
-  13: "pall",
-  14: "flaunches",
-  15: "pile",
-  16: "bordure",
-  17: "barry",
-  18: "pally",
-  19: "bendy",
-  20: "chevronny",
-  21: "chequy",
-  22: "lozengy",
-  23: "gyronny",
-  24: "gyronny6",
-  25: "gyronny12",
+  12: "fess",
+  13: "flaunches",
+  14: "fret",
+  15: "gyronny6",
+  16: "gyronny",
+  17: "gyronny12",
+  18: "label",
+  19: "lozengy",
+  20: "orle",
+  21: "pale",
+  22: "pall",
+  23: "pally",
+  24: "partyPerBendSinister",
+  25: "partyPerFess",
+  26: "partyPerPale",
+  27: "pile",
+  28: "quarter",
+  29: "quarterly",
+  30: "saltire",
+  31: "tressure",
 };
 
 const colourNames = {
@@ -153,31 +224,38 @@ const colourNames = {
 };
 
 const shapeNames = {
-  partyPerFess: "Party per Fess",
-  partyPerPale: "Party per Pale",
-  partyPerBendSinister: "Party per Bend Sinister",
-  quarterly: "Quarterly",
-  chief: "Chief",
-  pale: "Pale",
-  fess: "Fess",
+  barry: "Barry",
+  base: "Base",
   bend: "Bend",
   bendSinister: "Bend Sinister",
-  chevron: "Chevron",
-  cross: "Cross",
-  saltire: "Saltire",
-  pall: "Pall",
-  flaunches: "Flaunches",
-  pile: "Pile",
-  bordure: "Bordure",
-  barry: "Barry",
-  pally: "Pally",
   bendy: "Bendy",
-  chevronny: "Chevronny",
+  bordure: "Bordure",
+  canton: "Canton",
   chequy: "Chequy",
-  lozengy: "Lozengy",
-  gyronny: "Gyronny of 8",
+  chevron: "Chevron",
+  chevronny: "Chevronny",
+  chief: "Chief",
+  cross: "Cross",
+  fess: "Fess",
+  flaunches: "Flaunches",
+  fret: "Fret",
   gyronny6: "Gyronny of 6",
+  gyronny: "Gyronny of 8",
   gyronny12: "Gyronny of 12",
+  label: "Label",
+  lozengy: "Lozengy",
+  orle: "Orle",
+  pale: "Pale",
+  pall: "Pall",
+  pally: "Pally",
+  partyPerBendSinister: "Party per Bend Sinister",
+  partyPerFess: "Party per Fess",
+  partyPerPale: "Party per Pale",
+  pile: "Pile",
+  quarter: "Quarter",
+  quarterly: "Quarterly",
+  saltire: "Saltire",
+  tressure: "Tressure",
 };
 
 function isBretonnian() {
@@ -206,15 +284,8 @@ function randomColour() {
 }
 
 const geometricCharges = [
-  "escutcheon",
-  "lozenge",
-  "fusil",
-  "mascle",
-  "rustre",
-  "billet",
-  "roundel",
   "annulet",
-  "fountain",
+  "billet",
   "cross-botonny",
   "cross-crosslet",
   "cross-flory",
@@ -223,17 +294,17 @@ const geometricCharges = [
   "cross-patonce",
   "cross-pattee",
   "cross-potent",
+  "escutcheon",
+  "fountain",
+  "fusil",
+  "lozenge",
+  "mascle",
+  "roundel",
+  "rustre",
 ];
 const geometricDisplayNames = {
-  escutcheon: "Escutcheon",
-  lozenge: "Lozenge",
-  fusil: "Fusil",
-  mascle: "Mascle",
-  rustre: "Rustre",
-  billet: "Billet",
-  roundel: "Roundel",
   annulet: "Annulet",
-  fountain: "Fountain",
+  billet: "Billet",
   "cross-botonny": "Cross Botonny",
   "cross-crosslet": "Cross Crosslet",
   "cross-flory": "Cross Flory",
@@ -242,6 +313,13 @@ const geometricDisplayNames = {
   "cross-patonce": "Cross Patonce",
   "cross-pattee": "Cross Pattée",
   "cross-potent": "Cross Potent",
+  escutcheon: "Escutcheon",
+  fountain: "Fountain",
+  fusil: "Fusil",
+  lozenge: "Lozenge",
+  mascle: "Mascle",
+  rustre: "Rustre",
+  roundel: "Roundel",
 };
 function isGeometric(device) {
   return geometricCharges.includes(device);
@@ -579,6 +657,63 @@ function getDivisionSpecificArrangement(count, shape) {
           size: 45,
         };
       break;
+    case "quarter":
+      if (count === 1) return { positions: [{ cx: 50, cy: 55 }], size: 70 };
+      if (count === 2)
+        return {
+          positions: [
+            { cx: 35, cy: 55 },
+            { cx: 75, cy: 55 },
+          ],
+          size: 45,
+        };
+      if (count === 4)
+        return {
+          positions: [
+            { cx: 35, cy: 38 },
+            { cx: 75, cy: 38 },
+            { cx: 35, cy: 78 },
+            { cx: 75, cy: 78 },
+          ],
+          size: 35,
+        };
+      break;
+    case "canton":
+      if (count === 1) return { positions: [{ cx: 30, cy: 30 }], size: 45 };
+      break;
+    case "base":
+      if (count === 1) return { positions: [{ cx: 100, cy: 205 }], size: 50 };
+      if (count === 2)
+        return {
+          positions: [
+            { cx: 65, cy: 205 },
+            { cx: 135, cy: 205 },
+          ],
+          size: 40,
+        };
+      if (count === 3)
+        return {
+          positions: [
+            { cx: 45, cy: 205 },
+            { cx: 100, cy: 205 },
+            { cx: 155, cy: 205 },
+          ],
+          size: 35,
+        };
+      break;
+    case "label":
+      // Charges typically placed below the label (which ends at y=78)
+      if (count === 1) return { positions: [{ cx: 100, cy: 155 }], size: 100 };
+      if (count === 3)
+        return {
+          positions: [
+            { cx: 50, cy: 155 },
+            { cx: 100, cy: 155 },
+            { cx: 150, cy: 155 },
+          ],
+          size: 55,
+        };
+      break;
   }
   return null;
 }
@@ -739,6 +874,79 @@ function getFieldColourAt(x, y, shape, col1, col2) {
       return gyronnyColour(x, y, 6, col1, col2);
     case "gyronny12":
       return gyronnyColour(x, y, 12, col1, col2);
+    case "quarter":
+      return x <= 100 && y <= 110 ? col2 : col1;
+    case "canton":
+      return x <= 60 && y <= 60 ? col2 : col1;
+    case "orle": {
+      // Check if point is within the orle band (follows shield curve)
+      const inShieldOuter = (px, py, inset) => {
+        if (px < inset || px > 200 - inset || py < inset) return false;
+        if (py <= 110) return true;
+        // Check curved bottom using ellipse approximation
+        const cx = 100,
+          cy = 160;
+        const rx = 75 - inset * 0.75,
+          ry = 55 - inset * 0.45;
+        return (px - cx) ** 2 / rx ** 2 + (py - cy) ** 2 / ry ** 2 <= 1;
+      };
+      const inOuter = inShieldOuter(x, y, 25);
+      const inInner = inShieldOuter(x, y, 37);
+      return inOuter && !inInner ? col2 : col1;
+    }
+    case "tressure": {
+      const inShieldOuter = (px, py, inset) => {
+        if (px < inset || px > 200 - inset || py < inset) return false;
+        if (py <= 110) return true;
+        const cx = 100,
+          cy = 160;
+        const rx = 75 - inset * 0.75,
+          ry = 55 - inset * 0.45;
+        return (px - cx) ** 2 / rx ** 2 + (py - cy) ** 2 / ry ** 2 <= 1;
+      };
+      const inOuter = inShieldOuter(x, y, 22);
+      const inInner = inShieldOuter(x, y, 30);
+      return inOuter && !inInner ? col2 : col1;
+    }
+    case "base":
+      return y >= 180 ? col2 : col1;
+    case "fret": {
+      // Mascle with interlaced bendlets
+      const cx = 100,
+        cy = 108;
+      const outerR = 50,
+        innerR = 30;
+      const bw = 25;
+      // Check mascle (voided diamond)
+      const dx = Math.abs(x - cx),
+        dy = Math.abs(y - cy);
+      const inOuter = dx + dy <= outerR;
+      const inInner = dx + dy <= innerR;
+      const onMascle = inOuter && !inInner;
+      // Check bendlets
+      const onBand1 = Math.abs(x - cx - (y - cy)) < bw;
+      const onBand2 = Math.abs(x - cx + (y - cy)) < bw;
+      return onMascle || onBand1 || onBand2 ? col2 : col1;
+    }
+    case "label": {
+      // Horizontal bar at top with 5 pendants
+      const barTop = 25,
+        barH = 18,
+        pendH = 35,
+        pendW = 16;
+      if (y >= barTop && y <= barTop + barH) return col2;
+      const pendants = [28, 60, 100, 140, 172];
+      for (const px of pendants) {
+        if (
+          x >= px - pendW / 2 &&
+          x <= px + pendW / 2 &&
+          y > barTop + barH &&
+          y <= barTop + barH + pendH
+        )
+          return col2;
+      }
+      return col1;
+    }
     default:
       return col1;
   }
@@ -1019,6 +1227,98 @@ function generateDivision(shape, col1, col2) {
       return buildGyronny(6, col1, col2);
     case "gyronny12":
       return buildGyronny(12, col1, col2);
+
+    case "quarter":
+      return {
+        defs: "",
+        content: `
+                ${field(col1)}
+                <rect x="0" y="0" width="100" height="110" fill="${col2}"/>`,
+      };
+
+    case "canton":
+      return {
+        defs: "",
+        content: `
+                ${field(col1)}
+                <rect x="0" y="0" width="60" height="60" fill="${col2}"/>`,
+      };
+
+    case "orle": {
+      // Orle follows the shield shape, inset from edges
+      const outer =
+        "M 25,25 L 175,25 L 175,110 C 175,165 145,205 100,215 C 55,205 25,165 25,110 Z";
+      const inner =
+        "M 37,37 L 163,37 L 163,110 C 163,155 138,190 100,198 C 62,190 37,155 37,110 Z";
+      return {
+        defs: "",
+        content: `
+                ${field(col1)}
+                <path d="${outer} ${inner}" fill="${col2}" fill-rule="evenodd"/>`,
+      };
+    }
+
+    case "tressure": {
+      // Tressure is a thinner version of orle
+      const outer =
+        "M 22,22 L 178,22 L 178,110 C 178,168 148,212 100,220 C 52,212 22,168 22,110 Z";
+      const inner =
+        "M 30,30 L 170,30 L 170,110 C 170,162 142,202 100,210 C 58,202 30,162 30,110 Z";
+      return {
+        defs: "",
+        content: `
+                ${field(col1)}
+                <path d="${outer} ${inner}" fill="${col2}" fill-rule="evenodd"/>`,
+      };
+    }
+
+    case "base":
+      return {
+        defs: "",
+        content: `
+                ${field(col1)}
+                <rect x="0" y="180" width="${W}" height="60" fill="${col2}"/>`,
+      };
+
+    case "fret": {
+      const sw = 6; // stroke width for outline
+      return {
+        defs: "",
+        content: `
+                ${field(col1)}
+                <svg x="0" y="0" width="${W}" height="${H}" viewBox="0 0 600 600" preserveAspectRatio="none">
+                  <g transform="matrix(2.7951,0,0,2.7951,-11.42941,-15.093552)">
+                    <path d="M112,18.6l-92.8,92.7l92.8,92.8l92.8-92.8L112,18.6z M112,56l55.3,55.3L112,166.6l-55.3-55.3L112,56z" fill="${col2}" stroke="${col1}" stroke-width="${sw}" fill-rule="evenodd"/>
+                  </g>
+                  <path d="M543.4,2.2l-270,270.2L69,477c14.6,21.1,30.6,40.2,47.3,57.4l209.5-209.6L598.5,51.9c0-0.4,0-49.8,0-49.8L543.4,2.2z" fill="${col2}" stroke="${col1}" stroke-width="${sw}"/>
+                  <path d="M1.5,2.2v46.4L145.8,193l52.3-52.3L59.7,2.2H1.5z" fill="${col2}" stroke="${col1}" stroke-width="${sw}"/>
+                  <path d="M250.4,193.1l-52.3,52.3L352.6,400l52.3-52.3L250.4,193.1z" fill="${col2}" stroke="${col1}" stroke-width="${sw}"/>
+                  <path d="M457.3,400l-52.4,52.4l80.3,80.3c16.6-17.3,32.6-36.5,47.1-57.7L457.3,400z" fill="${col2}" stroke="${col1}" stroke-width="${sw}"/>
+                </svg>`,
+      };
+    }
+
+    case "label": {
+      // Label: horizontal bar at top with 5 rectangular pendants
+      const barTop = 25,
+        barH = 18,
+        pendH = 35,
+        pendW = 16;
+      const pendants = [28, 60, 100, 140, 172]; // x positions centered
+      let pendantsSvg = pendants
+        .map(
+          (px) =>
+            `<rect x="${px - pendW / 2}" y="${barTop + barH}" width="${pendW}" height="${pendH}" fill="${col2}"/>`,
+        )
+        .join("\n                ");
+      return {
+        defs: "",
+        content: `
+                ${field(col1)}
+                <rect x="0" y="${barTop}" width="${W}" height="${barH}" fill="${col2}"/>
+                ${pendantsSvg}`,
+      };
+    }
 
     default:
       return { defs: "", content: field(col1) };
@@ -1427,6 +1727,7 @@ function buildChargeColourControls(count, tinctures = []) {
     sel.addEventListener("change", () => {
       swatch.style.background = sel.value;
       renderFromControls();
+      updateHashFromControls();
     });
   }
 }
@@ -1479,16 +1780,17 @@ const updateHeraldry = (seed) => {
   const device = randomDevice();
   const col1 = randomColour();
   const col2 = randomColour();
-  const shape = shapes[Math.floor(random() * Object.keys(shapes).length)];
+  const shapeValues = Object.values(shapes);
+  const shape = shapeValues[Math.floor(random() * shapeValues.length)];
   const count = Math.floor(random() * 7);
   const { positions } = getArrangement(count, shape);
-  const tinctures = positions.map(({ cx, cy }) =>
-    contrastingTincture(
-      getFieldColourAt(cx, cy, shape, col1, col2),
-      col1,
-      col2,
-    ),
+  // Pick a single charge colour based on the center of the shield
+  const chargeTincture = contrastingTincture(
+    getFieldColourAt(50, 50, shape, col1, col2),
+    col1,
+    col2,
   );
+  const tinctures = positions.map(() => chargeTincture);
   setControls(device, col1, col2, shape, count, tinctures);
   document.getElementById("ctrl-layout").value = "division";
   updateLayoutDropdown();
@@ -1509,13 +1811,13 @@ function recomputeChargeColours() {
   const useSpecific =
     document.getElementById("ctrl-layout").value !== "standard";
   const { positions } = getArrangement(count, shape, useSpecific);
-  const tinctures = positions.map(({ cx, cy }) =>
-    contrastingTincture(
-      getFieldColourAt(cx, cy, shape, col1, col2),
-      col1,
-      col2,
-    ),
+  // Pick a single charge colour based on the center of the shield
+  const chargeTincture = contrastingTincture(
+    getFieldColourAt(50, 50, shape, col1, col2),
+    col1,
+    col2,
   );
+  const tinctures = positions.map(() => chargeTincture);
   buildChargeColourControls(count, tinctures);
 }
 
@@ -1523,9 +1825,29 @@ populateControls();
 
 // Load from URL hash or generate random
 function loadFromHash() {
-  const hash = location.hash.slice(1).toUpperCase();
+  const hash = location.hash.slice(1);
   if (hash) {
-    const seed = idToSeed(hash);
+    // Try config-based hash first
+    const state = decodeState(hash);
+    if (state) {
+      document.getElementById("ctrl-shape").value = state.shape;
+      document.getElementById("ctrl-col1").value = "#" + state.col1;
+      document.getElementById("ctrl-col2").value = "#" + state.col2;
+      document.getElementById("ctrl-device").value = state.device;
+      document.getElementById("ctrl-count").value = state.count;
+      document.getElementById("ctrl-layout").value = state.layout;
+      updateSwatches();
+      updateLayoutDropdown();
+      buildChargeColourControls(
+        parseInt(state.count),
+        state.chargeCols.map((c) => "#" + c),
+      );
+      renderFromControls();
+      document.getElementById("seed-display").value = "";
+      return;
+    }
+    // Try seed-based hash
+    const seed = idToSeed(hash.toUpperCase());
     if (!isNaN(seed) && seed >= 0) {
       updateHeraldry(seed);
       return;
@@ -1547,11 +1869,13 @@ document.getElementById("ctrl-shape").addEventListener("change", () => {
   updateLayoutDropdown();
   recomputeChargeColours();
   renderFromControls();
+  updateHashFromControls();
 });
 ["ctrl-col1", "ctrl-col2", "ctrl-device"].forEach((id) => {
   document.getElementById(id).addEventListener("change", () => {
     updateSwatches();
     renderFromControls();
+    updateHashFromControls();
   });
 });
 document.getElementById("ctrl-count").addEventListener("change", () => {
@@ -1559,10 +1883,12 @@ document.getElementById("ctrl-count").addEventListener("change", () => {
   updateLayoutDropdown();
   recomputeChargeColours();
   renderFromControls();
+  updateHashFromControls();
 });
 document.getElementById("ctrl-layout").addEventListener("change", () => {
   recomputeChargeColours();
   renderFromControls();
+  updateHashFromControls();
 });
 const ruleBoxes = ["rule-normal", "rule-brettonia"].map((id) =>
   document.getElementById(id),
@@ -1628,11 +1954,16 @@ function svgToDataUrl(svgEl) {
   clone.setAttribute("width", 200);
   clone.setAttribute("height", 240);
   const data = new XMLSerializer().serializeToString(clone);
-  return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(data)));
+  return (
+    "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(data)))
+  );
 }
 
 document.getElementById("load-seed").addEventListener("click", () => {
-  const input = document.getElementById("seed-display").value.trim().toUpperCase();
+  const input = document
+    .getElementById("seed-display")
+    .value.trim()
+    .toUpperCase();
   if (!input) return;
   const seed = idToSeed(input);
   if (isNaN(seed) || seed < 0) {
@@ -1651,123 +1982,128 @@ document.getElementById("seed-display").addEventListener("keydown", (e) => {
 
 document.getElementById("save-png").addEventListener("click", async () => {
   try {
-  const svg = heraldry.querySelector("svg");
-  if (!svg) return;
+    const svg = heraldry.querySelector("svg");
+    if (!svg) return;
 
-  const scale = 4;
-  const width = 200;
-  const height = 240;
-  const canvas = document.createElement("canvas");
-  canvas.width = width * scale;
-  canvas.height = height * scale;
-  const ctx = canvas.getContext("2d");
-  ctx.scale(scale, scale);
+    const scale = 4;
+    const width = 200;
+    const height = 240;
+    const canvas = document.createElement("canvas");
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(scale, scale);
 
-  // Get image elements and their attributes before removing
-  const imageEls = svg.querySelectorAll("image");
-  const imageData = Array.from(imageEls).map((img) => ({
-    href: img.getAttribute("href"),
-    x: parseFloat(img.getAttribute("x")),
-    y: parseFloat(img.getAttribute("y")),
-    width: parseFloat(img.getAttribute("width")),
-    height: parseFloat(img.getAttribute("height")),
-    filter: img.getAttribute("filter"),
-  }));
+    // Get image elements and their attributes before removing
+    const imageEls = svg.querySelectorAll("image");
+    const imageData = Array.from(imageEls).map((img) => ({
+      href: img.getAttribute("href"),
+      x: parseFloat(img.getAttribute("x")),
+      y: parseFloat(img.getAttribute("y")),
+      width: parseFloat(img.getAttribute("width")),
+      height: parseFloat(img.getAttribute("height")),
+      filter: img.getAttribute("filter"),
+    }));
 
-  // Create SVG without images for base rendering
-  const svgClone = svg.cloneNode(true);
-  svgClone.querySelectorAll("image").forEach((img) => img.remove());
+    // Create SVG without images for base rendering
+    const svgClone = svg.cloneNode(true);
+    svgClone.querySelectorAll("image").forEach((img) => img.remove());
 
-  // Draw base shield
-  const baseImg = await loadImage(svgToDataUrl(svgClone));
-  ctx.drawImage(baseImg, 0, 0, width, height);
+    // Draw base shield
+    const baseImg = await loadImage(svgToDataUrl(svgClone));
+    ctx.drawImage(baseImg, 0, 0, width, height);
 
-  // Create clipping path matching the shield
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(200, 0);
-  ctx.lineTo(200, 110);
-  ctx.bezierCurveTo(200, 180, 160, 230, 100, 240);
-  ctx.bezierCurveTo(40, 230, 0, 180, 0, 110);
-  ctx.closePath();
-  ctx.clip();
+    // Create clipping path matching the shield
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(200, 0);
+    ctx.lineTo(200, 110);
+    ctx.bezierCurveTo(200, 180, 160, 230, 100, 240);
+    ctx.bezierCurveTo(40, 230, 0, 180, 0, 110);
+    ctx.closePath();
+    ctx.clip();
 
-  // Draw each device image
-  for (const data of imageData) {
-    if (!data.href) continue;
-    try {
-      const deviceImg = await loadImage(data.href);
+    // Draw each device image
+    for (const data of imageData) {
+      if (!data.href) continue;
+      try {
+        const deviceImg = await loadImage(data.href);
 
-      // Apply color filter by drawing to temp canvas
-      if (data.filter) {
-        const match = data.filter.match(/url\(#dev-([a-fA-F0-9]+)\)/);
-        if (match) {
-          const color = "#" + match[1];
-          const tempCanvas = document.createElement("canvas");
-          tempCanvas.width = data.width * scale;
-          tempCanvas.height = data.height * scale;
-          const tempCtx = tempCanvas.getContext("2d");
-          tempCtx.scale(scale, scale);
+        // Apply color filter by drawing to temp canvas
+        if (data.filter) {
+          const match = data.filter.match(/url\(#dev-([a-fA-F0-9]+)\)/);
+          if (match) {
+            const color = "#" + match[1];
+            const tempCanvas = document.createElement("canvas");
+            tempCanvas.width = data.width * scale;
+            tempCanvas.height = data.height * scale;
+            const tempCtx = tempCanvas.getContext("2d");
+            tempCtx.scale(scale, scale);
 
-          if (color === "#000000") {
-            // Black tincture: invert the image (black outline becomes white, white fill becomes black)
-            tempCtx.drawImage(deviceImg, 0, 0, data.width, data.height);
-            const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-            const pixels = imageData.data;
-            for (let i = 0; i < pixels.length; i += 4) {
-              pixels[i] = 255 - pixels[i];       // R
-              pixels[i + 1] = 255 - pixels[i + 1]; // G
-              pixels[i + 2] = 255 - pixels[i + 2]; // B
-              // Alpha stays the same
+            if (color === "#000000") {
+              // Black tincture: invert the image (black outline becomes white, white fill becomes black)
+              tempCtx.drawImage(deviceImg, 0, 0, data.width, data.height);
+              const imageData = tempCtx.getImageData(
+                0,
+                0,
+                tempCanvas.width,
+                tempCanvas.height,
+              );
+              const pixels = imageData.data;
+              for (let i = 0; i < pixels.length; i += 4) {
+                pixels[i] = 255 - pixels[i]; // R
+                pixels[i + 1] = 255 - pixels[i + 1]; // G
+                pixels[i + 2] = 255 - pixels[i + 2]; // B
+                // Alpha stays the same
+              }
+              tempCtx.putImageData(imageData, 0, 0);
+            } else {
+              // Fill with tincture color first
+              tempCtx.fillStyle = color;
+              tempCtx.fillRect(0, 0, data.width, data.height);
+
+              // Multiply blend: white becomes color, black stays black
+              tempCtx.globalCompositeOperation = "multiply";
+              tempCtx.drawImage(deviceImg, 0, 0, data.width, data.height);
+
+              // Use original image alpha to mask out background
+              tempCtx.globalCompositeOperation = "destination-in";
+              tempCtx.drawImage(deviceImg, 0, 0, data.width, data.height);
             }
-            tempCtx.putImageData(imageData, 0, 0);
-          } else {
-            // Fill with tincture color first
-            tempCtx.fillStyle = color;
-            tempCtx.fillRect(0, 0, data.width, data.height);
 
-            // Multiply blend: white becomes color, black stays black
-            tempCtx.globalCompositeOperation = "multiply";
-            tempCtx.drawImage(deviceImg, 0, 0, data.width, data.height);
-
-            // Use original image alpha to mask out background
-            tempCtx.globalCompositeOperation = "destination-in";
-            tempCtx.drawImage(deviceImg, 0, 0, data.width, data.height);
+            ctx.drawImage(tempCanvas, data.x, data.y, data.width, data.height);
+            continue;
           }
-
-          ctx.drawImage(tempCanvas, data.x, data.y, data.width, data.height);
-          continue;
         }
+        ctx.drawImage(deviceImg, data.x, data.y, data.width, data.height);
+      } catch (e) {
+        console.warn("Failed to load device image:", data.href, e);
       }
-      ctx.drawImage(deviceImg, data.x, data.y, data.width, data.height);
-    } catch (e) {
-      console.warn("Failed to load device image:", data.href, e);
     }
-  }
 
-  ctx.restore();
+    ctx.restore();
 
-  // Redraw shield border on top
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(200, 0);
-  ctx.lineTo(200, 110);
-  ctx.bezierCurveTo(200, 180, 160, 230, 100, 240);
-  ctx.bezierCurveTo(40, 230, 0, 180, 0, 110);
-  ctx.closePath();
-  ctx.strokeStyle = "#1a1a1a";
-  ctx.lineWidth = 4;
-  ctx.lineJoin = "round";
-  ctx.stroke();
+    // Redraw shield border on top
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(200, 0);
+    ctx.lineTo(200, 110);
+    ctx.bezierCurveTo(200, 180, 160, 230, 100, 240);
+    ctx.bezierCurveTo(40, 230, 0, 180, 0, 110);
+    ctx.closePath();
+    ctx.strokeStyle = "#1a1a1a";
+    ctx.lineWidth = 4;
+    ctx.lineJoin = "round";
+    ctx.stroke();
 
-  canvas.toBlob((blob) => {
-    const link = document.createElement("a");
-    link.download = "heraldry.png";
-    link.href = URL.createObjectURL(blob);
-    link.click();
-    URL.revokeObjectURL(link.href);
-  }, "image/png");
+    canvas.toBlob((blob) => {
+      const link = document.createElement("a");
+      link.download = "heraldry.png";
+      link.href = URL.createObjectURL(blob);
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }, "image/png");
   } catch (e) {
     console.error("Save PNG failed:", e);
     alert("Failed to save PNG: " + e.message);
