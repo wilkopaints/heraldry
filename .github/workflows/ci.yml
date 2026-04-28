@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm install
+
+      - run: npx playwright install --with-deps firefox chromium
+
+      - run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-linux
+          path: playwright-report/
+          retention-days: 30
+
+  test-macos-firefox:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm install
+
+      - run: npx playwright install --with-deps firefox
+
+      - run: npx playwright test --project=firefox
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-macos-firefox
+          path: playwright-report/
+          retention-days: 30
+
+  deploy:
+    needs: [test-linux, test-macos-firefox]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare site files
+        run: |
+          mkdir _site
+          rsync -a \
+            --exclude='.git' \
+            --exclude='tests' \
+            --exclude='node_modules' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='playwright.config.js' \
+            --exclude='.github' \
+            --exclude='playwright-report' \
+            --exclude='test-results' \
+            . _site/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
