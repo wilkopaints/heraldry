@@ -419,6 +419,8 @@ details[open] summary {
 
 .ctrl-label select {
   appearance: none;
+  -moz-appearance: none;
+  box-sizing: border-box;
   font-family: inherit;
   font-size: 1em;
   font-weight: 300;
@@ -426,7 +428,7 @@ details[open] summary {
   text-transform: none;
   padding: 0 1em;
   height: 2.75em;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 0;
   background: var(--border-bg);
   color: var(--fg);
