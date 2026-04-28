@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
 
+async function snap(page, name) {
+  const path = test.info().outputPath(`${name}.png`);
+  await page.screenshot({ path });
+  await test.info().attach(name, { path, contentType: 'image/png' });
+}
+
 test.describe('Division and Device selects', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -11,33 +17,23 @@ test.describe('Division and Device selects', () => {
   test('division select updates the heraldry', async ({ page }) => {
     const select = page.locator('#ctrl-shape');
 
-    // Establish a known starting state
     await select.selectOption('barry');
     await expect(page.locator('#heraldry svg')).toBeVisible();
     const svgBefore = await page.locator('#heraldry').innerHTML();
+    await snap(page, 'division-barry');
 
-    const beforeShot = await page.screenshot();
-    await test.info().attach('division-barry', { body: beforeShot, contentType: 'image/png' });
-
-    // Click to open the native OS dropdown, then screenshot it while open
     await select.click();
     await page.waitForTimeout(300); // native OS picker renders outside the DOM
-    const openShot = await page.screenshot();
-    await test.info().attach('division-dropdown-open', { body: openShot, contentType: 'image/png' });
+    await snap(page, 'division-dropdown-open');
 
-    // Select a different division (closes the dropdown and fires change)
     await select.selectOption('chevron');
     await expect(page.locator('#heraldry svg')).toBeVisible();
+    await snap(page, 'division-chevron');
 
-    const afterShot = await page.screenshot();
-    await test.info().attach('division-chevron', { body: afterShot, contentType: 'image/png' });
-    const svgAfter = await page.locator('#heraldry').innerHTML();
-
-    expect(svgAfter).not.toBe(svgBefore);
+    expect(await page.locator('#heraldry').innerHTML()).not.toBe(svgBefore);
   });
 
   test('device select updates the heraldry when charges are shown', async ({ page }) => {
-    // Charges must be > 0 for device to appear in the SVG
     await page.locator('#ctrl-count').selectOption('1');
     await expect(page.locator('#heraldry svg')).toBeVisible();
 
@@ -46,24 +42,17 @@ test.describe('Division and Device selects', () => {
     await select.selectOption('annulet');
     await expect(page.locator('#heraldry svg')).toBeVisible();
     const svgBefore = await page.locator('#heraldry').innerHTML();
+    await snap(page, 'device-annulet');
 
-    const beforeShot = await page.screenshot();
-    await test.info().attach('device-annulet', { body: beforeShot, contentType: 'image/png' });
-
-    // Click to open the native OS dropdown, then screenshot it while open
     await select.click();
     await page.waitForTimeout(300); // native OS picker renders outside the DOM
-    const openShot = await page.screenshot();
-    await test.info().attach('device-dropdown-open', { body: openShot, contentType: 'image/png' });
+    await snap(page, 'device-dropdown-open');
 
     await select.selectOption('billet');
     await expect(page.locator('#heraldry svg')).toBeVisible();
+    await snap(page, 'device-billet');
 
-    const afterShot = await page.screenshot();
-    await test.info().attach('device-billet', { body: afterShot, contentType: 'image/png' });
-    const svgAfter = await page.locator('#heraldry').innerHTML();
-
-    expect(svgAfter).not.toBe(svgBefore);
+    expect(await page.locator('#heraldry').innerHTML()).not.toBe(svgBefore);
   });
 
   test('device select has no effect when charge count is zero', async ({ page }) => {
@@ -72,8 +61,7 @@ test.describe('Division and Device selects', () => {
     const svgBefore = await page.locator('#heraldry').innerHTML();
 
     await page.locator('#ctrl-device').selectOption('billet');
-    const svgAfter = await page.locator('#heraldry').innerHTML();
 
-    expect(svgAfter).toBe(svgBefore);
+    expect(await page.locator('#heraldry').innerHTML()).toBe(svgBefore);
   });
 });
