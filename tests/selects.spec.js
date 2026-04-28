@@ -6,16 +6,31 @@ async function snap(page, name) {
   await test.info().attach(name, { path, contentType: 'image/png' });
 }
 
-async function snapElement(locator, name) {
+async function snapExpanded(page, selectId, name) {
+  const select = page.locator(`#${selectId}`);
+  await select.evaluate(el => {
+    el.dataset.sizeBak = el.size;
+    el.size = Math.min(el.options.length, 8);
+    el.style.height = 'auto';
+  });
   const path = test.info().outputPath(`${name}.png`);
-  await locator.screenshot({ path });
+  await select.screenshot({ path });
   await test.info().attach(name, { path, contentType: 'image/png' });
+
+  const pagePath = test.info().outputPath(`${name}-page.png`);
+  await page.screenshot({ path: pagePath, fullPage: true });
+  await test.info().attach(`${name}-page`, { path: pagePath, contentType: 'image/png' });
+  await select.evaluate(el => {
+    el.size = parseInt(el.dataset.sizeBak) || 1;
+    el.style.height = '';
+    delete el.dataset.sizeBak;
+  });
 }
 
 test.describe('Division and Device selects', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('#heraldry svg')).toBeVisible();
+    await expect(page.locator('#heraldry > svg')).toBeVisible();
     await page.click('details summary');
     await expect(page.locator('#ctrl-shape')).toBeVisible();
   });
@@ -24,18 +39,14 @@ test.describe('Division and Device selects', () => {
     const select = page.locator('#ctrl-shape');
 
     await select.selectOption('barry');
-    await expect(page.locator('#heraldry svg')).toBeVisible();
+    await expect(page.locator('#heraldry > svg')).toBeVisible();
     const svgBefore = await page.locator('#heraldry').innerHTML();
     await snap(page, 'division-barry');
 
-    // Click to focus — the :focus box-shadow confirms the element is receiving clicks.
-    // Native OS dropdown popups render outside the browser compositor and cannot be
-    // captured by page.screenshot(); the focused state is the closest visible evidence.
-    await select.click();
-    await snapElement(select, 'division-select-focused');
+    await snapExpanded(page, 'ctrl-shape', 'division-dropdown-open');
 
     await select.selectOption('chevron');
-    await expect(page.locator('#heraldry svg')).toBeVisible();
+    await expect(page.locator('#heraldry > svg')).toBeVisible();
     await snap(page, 'division-chevron');
 
     expect(await page.locator('#heraldry').innerHTML()).not.toBe(svgBefore);
@@ -43,20 +54,19 @@ test.describe('Division and Device selects', () => {
 
   test('device select updates the heraldry when charges are shown', async ({ page }) => {
     await page.locator('#ctrl-count').selectOption('1');
-    await expect(page.locator('#heraldry svg')).toBeVisible();
+    await expect(page.locator('#heraldry > svg')).toBeVisible();
 
     const select = page.locator('#ctrl-device');
 
     await select.selectOption('annulet');
-    await expect(page.locator('#heraldry svg')).toBeVisible();
+    await expect(page.locator('#heraldry > svg')).toBeVisible();
     const svgBefore = await page.locator('#heraldry').innerHTML();
     await snap(page, 'device-annulet');
 
-    await select.click();
-    await snapElement(select, 'device-select-focused');
+    await snapExpanded(page, 'ctrl-device', 'device-dropdown-open');
 
     await select.selectOption('billet');
-    await expect(page.locator('#heraldry svg')).toBeVisible();
+    await expect(page.locator('#heraldry > svg')).toBeVisible();
     await snap(page, 'device-billet');
 
     expect(await page.locator('#heraldry').innerHTML()).not.toBe(svgBefore);
