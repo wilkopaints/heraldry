@@ -6,6 +6,12 @@ async function snap(page, name) {
   await test.info().attach(name, { path, contentType: 'image/png' });
 }
 
+async function snapElement(locator, name) {
+  const path = test.info().outputPath(`${name}.png`);
+  await locator.screenshot({ path });
+  await test.info().attach(name, { path, contentType: 'image/png' });
+}
+
 test.describe('Division and Device selects', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -22,9 +28,11 @@ test.describe('Division and Device selects', () => {
     const svgBefore = await page.locator('#heraldry').innerHTML();
     await snap(page, 'division-barry');
 
+    // Click to focus — the :focus box-shadow confirms the element is receiving clicks.
+    // Native OS dropdown popups render outside the browser compositor and cannot be
+    // captured by page.screenshot(); the focused state is the closest visible evidence.
     await select.click();
-    await page.waitForTimeout(300); // native OS picker renders outside the DOM
-    await snap(page, 'division-dropdown-open');
+    await snapElement(select, 'division-select-focused');
 
     await select.selectOption('chevron');
     await expect(page.locator('#heraldry svg')).toBeVisible();
@@ -45,8 +53,7 @@ test.describe('Division and Device selects', () => {
     await snap(page, 'device-annulet');
 
     await select.click();
-    await page.waitForTimeout(300); // native OS picker renders outside the DOM
-    await snap(page, 'device-dropdown-open');
+    await snapElement(select, 'device-select-focused');
 
     await select.selectOption('billet');
     await expect(page.locator('#heraldry svg')).toBeVisible();
