@@ -12,9 +12,7 @@ function getDivisionSpecificArrangement(count, shape) {
     case "barry":
       if (count === 1)
         return {
-          positions: [
-            { cx: 100, cy: 100 },
-          ],
+          positions: [{ cx: 100, cy: 100 }],
           size: 120,
         };
       if (count === 2)
@@ -213,13 +211,14 @@ function getDivisionSpecificArrangement(count, shape) {
         };
       break;
     case "chequy":
-      if (count === 2) return {
-        positions: [
-          { cx: 58, cy: 100 },
-          { cx: 142, cy: 100 },
-        ],
-        size: 68,
-      };
+      if (count === 2)
+        return {
+          positions: [
+            { cx: 58, cy: 100 },
+            { cx: 142, cy: 100 },
+          ],
+          size: 68,
+        };
       if (count === 3)
         return {
           positions: [
@@ -255,9 +254,7 @@ function getDivisionSpecificArrangement(count, shape) {
       // Charges placed in the chief flanks (above the arms) and base — not on the chevron band itself
       if (count === 1)
         return {
-          positions: [
-            { cx: 100, cy: 120 },
-          ],
+          positions: [{ cx: 100, cy: 120 }],
           size: 60,
         };
       if (count === 2)
@@ -516,9 +513,7 @@ function getDivisionSpecificArrangement(count, shape) {
     case "gyronny":
       if (count === 1)
         return {
-          positions: [
-            { cx: 100, cy: 120 },
-          ],
+          positions: [{ cx: 100, cy: 120 }],
           size: 130,
         };
       if (count === 2)
@@ -555,9 +550,7 @@ function getDivisionSpecificArrangement(count, shape) {
     case "gyronny12":
       if (count === 1)
         return {
-          positions: [
-            { cx: 100, cy: 120 },
-          ],
+          positions: [{ cx: 100, cy: 120 }],
           size: 130,
         };
       if (count === 2)
@@ -593,6 +586,146 @@ function getDivisionSpecificArrangement(count, shape) {
           ],
           size: 45,
         };
+      if (count === 4)
+        return {
+          positions: [
+            { cx: 60, cy: 185 },
+            { cx: 140, cy: 185 },
+            { cx: 60, cy: 120 },
+            { cx: 140, cy: 120 },
+          ],
+          size: 50,
+        };
+      if (count === 5)
+        return {
+          positions: [
+            { cx: 75, cy: 185 },
+            { cx: 125, cy: 185 },
+            { cx: 50, cy: 120 },
+            { cx: 150, cy: 120 },
+            { cx: 100, cy: 120 },
+          ],
+          size: 40,
+        };
+      if (count === 6)
+        return {
+          positions: [
+            { cx: 50, cy: 185 },
+            { cx: 150, cy: 185 },
+            { cx: 100, cy: 185 },
+            { cx: 50, cy: 120 },
+            { cx: 150, cy: 120 },
+            { cx: 100, cy: 120 },
+          ],
+          size: 40,
+        };
+      break;
+    case "lozengy":
+      // Centred on intersections
+      if (count === 1) return { positions: [{ cx: 100, cy: 100 }], size: 130 };
+      if (count === 2)
+        return {
+          positions: [
+            { cx: 60, cy: 100 },
+            { cx: 140, cy: 100 },
+          ],
+          size: 70,
+        };
+      if (count === 3)
+        return {
+          positions: [
+            { cx: 60, cy: 100 },
+            { cx: 140, cy: 100 },
+            { cx: 100, cy: 160 },
+          ],
+          size: 70,
+        };
+      if (count === 4)
+        return {
+          positions: [
+            { cx: 60, cy: 80 },
+            { cx: 140, cy: 80 },
+            { cx: 60, cy: 160 },
+            { cx: 140, cy: 160 },
+          ],
+          size: 60,
+        };
+      if (count === 5)
+        return {
+          positions: [
+            { cx: 60, cy: 40 },
+            { cx: 140, cy: 40 },
+            { cx: 60, cy: 120 },
+            { cx: 140, cy: 120 },
+            { cx: 100, cy: 200 },
+          ],
+          size: 60,
+        };
+      if (count === 6)
+        return {
+          positions: [
+            { cx: 60, cy: 40 },
+            { cx: 140, cy: 40 },
+            { cx: 60, cy: 120 },
+            { cx: 140, cy: 120 },
+            { cx: 60, cy: 200 },
+            { cx: 140, cy: 200 },
+          ],
+          size: 40,
+        };
+      break;
+    case "orle":
+      if (count === 1) return { positions: [{ cx: 100, cy: 110 }], size: 120 };
+      if (count === 2)
+        return {
+          positions: [
+            { cx: 100, cy: 80 },
+            { cx: 100, cy: 150 },
+          ],
+          size: 60,
+        };
+      if (count === 3)
+        return {
+          positions: [
+            { cx: 70, cy: 80 },
+            { cx: 130, cy: 80 },
+            { cx: 100, cy: 150 },
+          ],
+          size: 55,
+        };
+      if (count === 4)
+        return {
+          positions: [
+            { cx: 70, cy: 80 },
+            { cx: 130, cy: 80 },
+            { cx: 70, cy: 140 },
+            { cx: 130, cy: 140 },
+          ],
+          size: 50,
+        };
+      if (count === 5)
+        return {
+          positions: [
+            { cx: 70, cy: 70 },
+            { cx: 130, cy: 70 },
+            { cx: 70, cy: 125 },
+            { cx: 130, cy: 125 },
+            { cx: 100, cy: 170 },
+          ],
+          size: 50,
+        };
+      if (count === 6)
+        return {
+          positions: [
+            { cx: 70, cy: 60 },
+            { cx: 130, cy: 60 },
+            { cx: 70, cy: 105 },
+            { cx: 130, cy: 105 },
+            { cx: 70, cy: 150 },
+            { cx: 130, cy: 150 },
+          ],
+          size: 40,
+        };
       break;
     case "pale":
       if (count === 2)
@@ -614,6 +747,14 @@ function getDivisionSpecificArrangement(count, shape) {
         };
       break;
     case "pall":
+      if (count === 2)
+        return {
+          positions: [
+            { cx: 40, cy: 140 },
+            { cx: 160, cy: 140 },
+          ],
+          size: 60,
+        };
       if (count === 3)
         return {
           positions: [
@@ -621,7 +762,93 @@ function getDivisionSpecificArrangement(count, shape) {
             { cx: 160, cy: 40 },
             { cx: 100, cy: 190 },
           ],
-          size: 40,
+          size: 38,
+        };
+      if (count === 4)
+        return {
+          positions: [
+            { cx: 40, cy: 40 },
+            { cx: 160, cy: 40 },
+            { cx: 100, cy: 100 },
+            { cx: 100, cy: 190 },
+          ],
+          size: 38,
+        };
+      if (count === 5)
+        return {
+          positions: [
+            { cx: 40, cy: 40 },
+            { cx: 160, cy: 40 },
+            { cx: 100, cy: 100 },
+            { cx: 100, cy: 150 },
+            { cx: 100, cy: 200 },
+          ],
+          size: 38,
+        };
+      if (count === 6)
+        return {
+          positions: [
+            { cx: 40, cy: 40 },
+            { cx: 160, cy: 40 },
+            { cx: 75, cy: 80 },
+            { cx: 125, cy: 80 },
+            { cx: 100, cy: 140 },
+            { cx: 100, cy: 200 },
+          ],
+          size: 38,
+        };
+      break;
+    case "partyPerBendSinister":
+      if (count === 1) return { positions: [{ cx: 100, cy: 120 }], size: 130 };
+      if (count === 2)
+        return {
+          positions: [
+            { cx: 100, cy: 50 },
+            { cx: 100, cy: 180 },
+          ],
+          size: 70,
+        };
+      if (count === 3)
+        return {
+          positions: [
+            { cx: 50, cy: 110 },
+            { cx: 100, cy: 50 },
+            { cx: 140, cy: 140 },
+          ],
+          size: 55,
+        };
+      if (count === 4)
+        return {
+          positions: [
+            { cx: 50, cy: 110 },
+            { cx: 100, cy: 50 },
+            { cx: 160, cy: 110 },
+            { cx: 110, cy: 170 },
+          ],
+          size: 55,
+        };
+      if (count === 5)
+        return {
+          positions: [
+            { cx: 40, cy: 120 },
+            { cx: 110, cy: 40 },
+            { cx: 75, cy: 80 },
+            { cx: 160, cy: 120 },
+            { cx: 120, cy: 160 },
+          ],
+          size: 55,
+        };
+      if (count === 6)
+        return {
+          positions: [
+            { cx: 45, cy: 120 },
+            { cx: 115, cy: 40 },
+            { cx: 80, cy: 80 },
+            { cx: 135, cy: 140 },
+            { cx: 170, cy: 100 },
+            { cx: 95, cy: 180 },
+          ],
+          size: 55,
         };
       break;
     case "partyPerFess":
@@ -652,6 +879,17 @@ function getDivisionSpecificArrangement(count, shape) {
           ],
           size: 58,
         };
+      if (count === 5)
+        return {
+          positions: [
+            { cx: 40, cy: 55 },
+            { cx: 100, cy: 55 },
+            { cx: 160, cy: 55 },
+            { cx: 70, cy: 170 },
+            { cx: 130, cy: 170 },
+          ],
+          size: 50,
+        };
       if (count === 6)
         return {
           positions: [
@@ -661,6 +899,58 @@ function getDivisionSpecificArrangement(count, shape) {
             { cx: 50, cy: 170 },
             { cx: 100, cy: 170 },
             { cx: 150, cy: 170 },
+          ],
+          size: 44,
+        };
+      break;
+    case "pile":
+      if (count === 2)
+        return {
+          positions: [
+            { cx: 100, cy: 65 },
+            { cx: 100, cy: 155 },
+          ],
+          size: 70,
+        };
+      if (count === 3)
+        return {
+          positions: [
+            { cx: 60, cy: 55 },
+            { cx: 140, cy: 55 },
+            { cx: 100, cy: 155 },
+          ],
+          size: 60,
+        };
+      if (count === 4)
+        return {
+          positions: [
+            { cx: 55, cy: 55 },
+            { cx: 145, cy: 55 },
+            { cx: 40, cy: 160 },
+            { cx: 160, cy: 160 },
+          ],
+          size: 50,
+        };
+      if (count === 5)
+        return {
+          positions: [
+            { cx: 60, cy: 50 },
+            { cx: 140, cy: 50 },
+            { cx: 100, cy: 140 },
+            { cx: 40, cy: 160 },
+            { cx: 160, cy: 160 },
+          ],
+          size: 50,
+        };
+      if (count === 6)
+        return {
+          positions: [
+            { cx: 50, cy: 55 },
+            { cx: 100, cy: 110 },
+            { cx: 150, cy: 55 },
+            { cx: 40, cy: 170 },
+            { cx: 100, cy: 170 },
+            { cx: 160, cy: 170 },
           ],
           size: 44,
         };
@@ -716,6 +1006,15 @@ function getDivisionSpecificArrangement(count, shape) {
           ],
           size: 38,
         };
+      if (count === 3)
+        return {
+          positions: [
+            { cx: 30, cy: 35 },
+            { cx: 70, cy: 35 },
+            { cx: 50, cy: 80 },
+          ],
+          size: 30,
+        };
       if (count === 4)
         return {
           positions: [
@@ -726,13 +1025,36 @@ function getDivisionSpecificArrangement(count, shape) {
           ],
           size: 30,
         };
+      if (count === 5)
+        return {
+          positions: [
+            { cx: 30, cy: 30 },
+            { cx: 70, cy: 30 },
+            { cx: 30, cy: 80 },
+            { cx: 70, cy: 80 },
+            { cx: 50, cy: 55 },
+          ],
+          size: 30,
+        };
+      if (count === 6)
+        return {
+          positions: [
+            { cx: 20, cy: 30 },
+            { cx: 60, cy: 30 },
+            { cx: 20, cy: 80 },
+            { cx: 60, cy: 80 },
+            { cx: 40, cy: 55 },
+            { cx: 80, cy: 55 },
+          ],
+          size: 30,
+        };
       break;
     case "quarterly":
       if (count === 2)
         return {
           positions: [
             { cx: 50, cy: 55 },
-            { cx: 150, cy: 165 },
+            { cx: 145, cy: 160 },
           ],
           size: 68,
         };
@@ -750,33 +1072,137 @@ function getDivisionSpecificArrangement(count, shape) {
           positions: [
             { cx: 50, cy: 55 },
             { cx: 150, cy: 55 },
-            { cx: 50, cy: 170 },
-            { cx: 150, cy: 170 },
+            { cx: 50, cy: 160 },
+            { cx: 150, cy: 160 },
           ],
           size: 56,
         };
+      if (count === 5)
+        return {
+          positions: [
+            { cx: 50, cy: 55 },
+            { cx: 150, cy: 55 },
+            { cx: 50, cy: 160 },
+            { cx: 150, cy: 160 },
+            { cx: 100, cy: 110 },
+          ],
+          size: 56,
+        };
+      if (count === 6)
+        return {
+          positions: [
+            { cx: 50, cy: 75 },
+            { cx: 150, cy: 75 },
+            { cx: 50, cy: 30 },
+            { cx: 150, cy: 30 },
+            { cx: 50, cy: 160 },
+            { cx: 150, cy: 160 },
+          ],
+          size: 40,
+        };
       break;
     case "saltire":
+      if (count === 2)
+        return {
+          positions: [
+            { cx: 166, cy: 110 },
+            { cx: 34, cy: 110 },
+          ],
+          size: 48,
+        };
+      if (count === 3)
+        return {
+          positions: [
+            { cx: 38, cy: 110 },
+            { cx: 162, cy: 110 },
+            { cx: 100, cy: 175 },
+          ],
+          size: 48,
+        };
       if (count === 4)
         return {
           positions: [
-            { cx: 100, cy: 45 },
-            { cx: 38, cy: 112 },
-            { cx: 162, cy: 112 },
-            { cx: 100, cy: 180 },
+            { cx: 100, cy: 40 },
+            { cx: 38, cy: 110 },
+            { cx: 162, cy: 110 },
+            { cx: 100, cy: 175 },
           ],
-          size: 38,
+          size: 48,
         };
       if (count === 5)
         return {
           positions: [
             { cx: 100, cy: 108 },
-            { cx: 52, cy: 52 },
-            { cx: 148, cy: 52 },
-            { cx: 55, cy: 165 },
-            { cx: 145, cy: 165 },
+            { cx: 54, cy: 52 },
+            { cx: 146, cy: 52 },
+            { cx: 52, cy: 165 },
+            { cx: 148, cy: 165 },
           ],
           size: 34,
+        };
+      if (count === 6)
+        return {
+          positions: [
+            { cx: 124, cy: 135 },
+            { cx: 76, cy: 135 },
+            { cx: 54, cy: 52 },
+            { cx: 146, cy: 52 },
+            { cx: 44, cy: 175 },
+            { cx: 156, cy: 175 },
+          ],
+          size: 34,
+        };
+      break;
+    case "tressure":
+      if (count === 2)
+        return {
+          positions: [
+            { cx: 100, cy: 80 },
+            { cx: 100, cy: 160 },
+          ],
+          size: 60,
+        };
+      if (count === 3)
+        return {
+          positions: [
+            { cx: 70, cy: 80 },
+            { cx: 130, cy: 80 },
+            { cx: 100, cy: 160 },
+          ],
+          size: 50,
+        };
+      if (count === 4)
+        return {
+          positions: [
+            { cx: 100, cy: 60 },
+            { cx: 58, cy: 110 },
+            { cx: 142, cy: 110 },
+            { cx: 100, cy: 160 },
+          ],
+          size: 48,
+        };
+      if (count === 5)
+        return {
+          positions: [
+            { cx: 100, cy: 170 },
+            { cx: 60, cy: 70 },
+            { cx: 140, cy: 70 },
+            { cx: 60, cy: 130 },
+            { cx: 140, cy: 130 },
+          ],
+          size: 48,
+        };
+      if (count === 6)
+        return {
+          positions: [
+            { cx: 70, cy: 105 },
+            { cx: 130, cy: 105 },
+            { cx: 70, cy: 55 },
+            { cx: 130, cy: 55 },
+            { cx: 70, cy: 155 },
+            { cx: 130, cy: 155 },
+          ],
+          size: 40,
         };
       break;
   }
