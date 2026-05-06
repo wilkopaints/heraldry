@@ -109,43 +109,82 @@ test.describe('2020 MacBook Pro / Sonoma 14.6.1 / Firefox 149.0.2 regression', (
     }
   });
 
-  test('select does not inherit a webfont (avoids Firefox/macOS Wingdings glitch)', async ({ page }) => {
+  test('select has no letter-spacing (avoids Firefox/macOS Wingdings glitch)', async ({ page }) => {
     await page.click('details summary');
     await expect(page.locator('#ctrl-shape')).toBeVisible();
 
-    const families = await page.evaluate(() => {
-      const sel = getComputedStyle(document.querySelector('#ctrl-shape')).fontFamily;
-      const opt = getComputedStyle(document.querySelector('#ctrl-shape option')).fontFamily;
-      return { sel, opt };
+    const spacing = await page.evaluate(() => {
+      const sel = getComputedStyle(document.querySelector('#ctrl-shape'));
+      const opt = getComputedStyle(document.querySelector('#ctrl-shape option'));
+      return {
+        selLetter: sel.letterSpacing,
+        selWord: sel.wordSpacing,
+        optLetter: opt.letterSpacing,
+        optWord: opt.wordSpacing,
+      };
     });
 
-    const webfontPattern = /Source Sans Pro|Roboto Slab|Open Sans|Lato|Montserrat/i;
-    for (const [where, family] of Object.entries(families)) {
-      expect(
-        family,
-        `<${where === 'sel' ? 'select' : 'option'}> computed font-family "${family}" includes a webfont. Firefox on macOS Sonoma fails to pass loaded webfonts to the native popup widget, rendering garbled Wingdings-like glyphs. Use a system font stack instead of inheriting from body.`,
-      ).not.toMatch(webfontPattern);
-    }
+    // Firefox/macOS bug (Bugzilla 1822315): any non-zero letter-spacing on <select>
+    // makes the native popup render garbled "Wingdings-like" glyphs on Sonoma/Sequoia.
+    const isZero = v => v === 'normal' || /^-?0(\.0+)?(px|em|rem|%)?$/.test(v);
+    expect(
+      isZero(spacing.selLetter),
+      `<select> letter-spacing "${spacing.selLetter}" triggers Firefox/macOS native popup garble — set letter-spacing: normal.`,
+    ).toBe(true);
+    expect(isZero(spacing.optLetter), `<option> letter-spacing "${spacing.optLetter}" must be zero`).toBe(true);
+    expect(isZero(spacing.selWord), `<select> word-spacing "${spacing.selWord}" should be zero as a related precaution`).toBe(true);
+    expect(isZero(spacing.optWord), `<option> word-spacing "${spacing.optWord}" should be zero as a related precaution`).toBe(true);
   });
 
-  test('opened dropdown screenshot for visual regression', async ({ page }) => {
+  test('full-page screenshot of every dropdown opened', async ({ page }) => {
     await page.click('details summary');
-    const select = page.locator('#ctrl-shape');
-    await expect(select).toBeVisible();
+    await expect(page.locator('#ctrl-shape')).toBeVisible();
 
-    await select.evaluate(el => {
-      el.dataset.sizeBak = el.size;
-      el.size = Math.min(el.options.length, 8);
-      el.style.height = 'auto';
-    });
-    const path = test.info().outputPath('dropdown-open.png');
-    await select.screenshot({ path });
-    await test.info().attach('dropdown-open', { path, contentType: 'image/png' });
-    await select.evaluate(el => {
-      el.size = parseInt(el.dataset.sizeBak) || 1;
-      el.style.height = '';
-      delete el.dataset.sizeBak;
-    });
+    // Set count > 0 so charge-colour dropdowns and (potentially) the layout dropdown render.
+    await page.locator('#ctrl-count').selectOption('3');
+    await expect(page.locator('#heraldry > svg')).toBeVisible();
+
+    const selectIds = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('select'))
+        .map(s => s.id)
+        .filter(Boolean),
+    );
+    expect(selectIds.length, 'expected at least one select on the page').toBeGreaterThan(0);
+
+    for (const id of selectIds) {
+      const select = page.locator(`#${id}`);
+
+      await select.evaluate(el => {
+        const label = el.closest('label, .ctrl-label');
+        if (label) {
+          el.dataset._labelDisplayBak = label.style.display || '';
+          if (getComputedStyle(label).display === 'none') label.style.display = 'flex';
+        }
+        el.dataset._sizeBak = String(el.size);
+        el.size = Math.min(el.options.length || 1, 10);
+        el.style.height = 'auto';
+        el.scrollIntoView({ block: 'center' });
+      });
+
+      const fullPath = test.info().outputPath(`dropdown-${id}-fullpage.png`);
+      await page.screenshot({ path: fullPath, fullPage: true });
+      await test.info().attach(`dropdown-${id}-fullpage`, { path: fullPath, contentType: 'image/png' });
+
+      const cropPath = test.info().outputPath(`dropdown-${id}.png`);
+      await select.screenshot({ path: cropPath });
+      await test.info().attach(`dropdown-${id}`, { path: cropPath, contentType: 'image/png' });
+
+      await select.evaluate(el => {
+        el.size = parseInt(el.dataset._sizeBak) || 1;
+        el.style.height = '';
+        delete el.dataset._sizeBak;
+        const label = el.closest('label, .ctrl-label');
+        if (label && '_labelDisplayBak' in el.dataset) {
+          label.style.display = el.dataset._labelDisplayBak;
+          delete el.dataset._labelDisplayBak;
+        }
+      });
+    }
   });
 
   test('viewport and device pixel ratio match target environment', async ({ page }) => {
