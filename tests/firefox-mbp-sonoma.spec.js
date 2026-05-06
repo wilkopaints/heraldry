@@ -109,6 +109,25 @@ test.describe('2020 MacBook Pro / Sonoma 14.6.1 / Firefox 149.0.2 regression', (
     }
   });
 
+  test('select does not inherit a webfont (avoids Firefox/macOS Wingdings glitch)', async ({ page }) => {
+    await page.click('details summary');
+    await expect(page.locator('#ctrl-shape')).toBeVisible();
+
+    const families = await page.evaluate(() => {
+      const sel = getComputedStyle(document.querySelector('#ctrl-shape')).fontFamily;
+      const opt = getComputedStyle(document.querySelector('#ctrl-shape option')).fontFamily;
+      return { sel, opt };
+    });
+
+    const webfontPattern = /Source Sans Pro|Roboto Slab|Open Sans|Lato|Montserrat/i;
+    for (const [where, family] of Object.entries(families)) {
+      expect(
+        family,
+        `<${where === 'sel' ? 'select' : 'option'}> computed font-family "${family}" includes a webfont. Firefox on macOS Sonoma fails to pass loaded webfonts to the native popup widget, rendering garbled Wingdings-like glyphs. Use a system font stack instead of inheriting from body.`,
+      ).not.toMatch(webfontPattern);
+    }
+  });
+
   test('opened dropdown screenshot for visual regression', async ({ page }) => {
     await page.click('details summary');
     const select = page.locator('#ctrl-shape');
