@@ -136,6 +136,88 @@ test.describe('2020 MacBook Pro / Sonoma 14.6.1 / Firefox 149.0.2 regression', (
     expect(isZero(spacing.optWord), `<option> word-spacing "${spacing.optWord}" should be zero as a related precaution`).toBe(true);
   });
 
+  test('custom dropdown click selects an option and updates heraldry', async ({ page }) => {
+    await page.click('details summary');
+    const wrap = page.locator('#ctrl-shape').locator('..');
+    const trigger = wrap.locator('.cs-trigger');
+    const listbox = wrap.locator('.cs-listbox');
+
+    const currentValue = await page.locator('#ctrl-shape').inputValue();
+
+    await trigger.click();
+    await expect(listbox).toBeVisible();
+
+    const targetValue = await listbox.locator('.cs-option').evaluateAll(
+      (opts, current) => {
+        const other = opts.find(o => o.dataset.value !== current);
+        return other ? other.dataset.value : null;
+      },
+      currentValue,
+    );
+    expect(targetValue, 'expected at least two options to choose between').toBeTruthy();
+
+    const before = await page.locator('#heraldry').innerHTML();
+    await listbox.locator(`.cs-option[data-value="${targetValue}"]`).click();
+    await expect(listbox).toBeHidden();
+
+    expect(await page.locator('#ctrl-shape').inputValue()).toBe(targetValue);
+    expect(await page.locator('#heraldry').innerHTML()).not.toBe(before);
+  });
+
+  test('custom dropdown keyboard navigation works', async ({ page }) => {
+    await page.click('details summary');
+    const wrap = page.locator('#ctrl-device').locator('..');
+    const trigger = wrap.locator('.cs-trigger');
+    const listbox = wrap.locator('.cs-listbox');
+
+    await page.locator('#ctrl-count').selectOption('1');
+    await expect(page.locator('#heraldry > svg')).toBeVisible();
+
+    await trigger.focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(listbox).toBeVisible();
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(listbox).toBeHidden();
+
+    const value = await page.locator('#ctrl-device').inputValue();
+    expect(value).toBeTruthy();
+  });
+
+  test('outside click closes the dropdown', async ({ page }) => {
+    await page.click('details summary');
+    const wrap = page.locator('#ctrl-shape').locator('..');
+    await wrap.locator('.cs-trigger').click();
+    await expect(wrap.locator('.cs-listbox')).toBeVisible();
+
+    await page.locator('h1').click();
+    await expect(wrap.locator('.cs-listbox')).toBeHidden();
+  });
+
+  test('every native select is wrapped by a custom dropdown', async ({ page }) => {
+    await page.click('details summary');
+    await page.locator('#ctrl-count').selectOption('3');
+    await expect(page.locator('#heraldry > svg')).toBeVisible();
+
+    const result = await page.evaluate(() => {
+      const selects = Array.from(document.querySelectorAll('select'));
+      return selects.map(s => ({
+        id: s.id,
+        enhanced: s.dataset.csEnhanced === '1',
+        hasTrigger: !!s.parentElement?.querySelector(':scope > .cs-trigger'),
+        hasListbox: !!s.parentElement?.querySelector(':scope > .cs-listbox'),
+      }));
+    });
+
+    expect(result.length).toBeGreaterThan(0);
+    for (const r of result) {
+      expect(r.enhanced, `#${r.id} not enhanced`).toBe(true);
+      expect(r.hasTrigger, `#${r.id} missing custom trigger`).toBe(true);
+      expect(r.hasListbox, `#${r.id} missing custom listbox`).toBe(true);
+    }
+  });
+
   test('full-page screenshot of every dropdown opened', async ({ page }) => {
     await page.click('details summary');
     await expect(page.locator('#ctrl-shape')).toBeVisible();
@@ -154,36 +236,41 @@ test.describe('2020 MacBook Pro / Sonoma 14.6.1 / Firefox 149.0.2 regression', (
     for (const id of selectIds) {
       const select = page.locator(`#${id}`);
 
-      await select.evaluate(el => {
-        const label = el.closest('label, .ctrl-label');
-        if (label) {
-          el.dataset._labelDisplayBak = label.style.display || '';
-          if (getComputedStyle(label).display === 'none') label.style.display = 'flex';
+      // Force the wrapping label visible if it's hidden (e.g. layout dropdown is conditional).
+      const labelRestore = await select.evaluate(el => {
+        const label = el.closest('label.ctrl-label');
+        if (label && getComputedStyle(label).display === 'none') {
+          const prev = label.style.display;
+          label.style.display = 'flex';
+          return { prev, hadLabel: true };
         }
-        el.dataset._sizeBak = String(el.size);
-        el.size = Math.min(el.options.length || 1, 10);
-        el.style.height = 'auto';
-        el.scrollIntoView({ block: 'center' });
+        return { hadLabel: false };
       });
+
+      const trigger = page.locator(`#${id}`).locator('..').locator('.cs-trigger');
+      await expect(trigger).toBeVisible();
+      await trigger.scrollIntoViewIfNeeded();
+      await trigger.click();
+      await expect(page.locator(`#${id}`).locator('..').locator('.cs-listbox')).toBeVisible();
 
       const fullPath = test.info().outputPath(`dropdown-${id}-fullpage.png`);
       await page.screenshot({ path: fullPath, fullPage: true });
       await test.info().attach(`dropdown-${id}-fullpage`, { path: fullPath, contentType: 'image/png' });
 
       const cropPath = test.info().outputPath(`dropdown-${id}.png`);
-      await select.screenshot({ path: cropPath });
+      const wrap = page.locator(`#${id}`).locator('..');
+      await wrap.screenshot({ path: cropPath });
       await test.info().attach(`dropdown-${id}`, { path: cropPath, contentType: 'image/png' });
 
-      await select.evaluate(el => {
-        el.size = parseInt(el.dataset._sizeBak) || 1;
-        el.style.height = '';
-        delete el.dataset._sizeBak;
-        const label = el.closest('label, .ctrl-label');
-        if (label && '_labelDisplayBak' in el.dataset) {
-          label.style.display = el.dataset._labelDisplayBak;
-          delete el.dataset._labelDisplayBak;
-        }
-      });
+      // Close the dropdown before moving on (Escape key).
+      await page.keyboard.press('Escape');
+
+      if (labelRestore.hadLabel) {
+        await select.evaluate((el, prev) => {
+          const label = el.closest('label.ctrl-label');
+          if (label) label.style.display = prev;
+        }, labelRestore.prev);
+      }
     }
   });
 
