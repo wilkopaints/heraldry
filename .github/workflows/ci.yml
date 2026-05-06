@@ -7,16 +7,13 @@ on:
     branches: [main]
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   test-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
           cache: 'npm'
@@ -27,14 +24,14 @@ jobs:
 
       - run: npx playwright test
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: playwright-report-linux
           path: playwright-report/
           retention-days: 30
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: screenshots-linux
@@ -44,9 +41,9 @@ jobs:
   test-macos-firefox:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
           cache: 'npm'
@@ -57,14 +54,14 @@ jobs:
 
       - run: npx playwright test --project=firefox --project=firefox-mbp2020-sonoma
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: playwright-report-macos-firefox
           path: playwright-report/
           retention-days: 30
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: screenshots-macos-firefox
@@ -82,7 +79,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Prepare site files
         run: |
@@ -99,9 +96,9 @@ jobs:
             --exclude='test-results' \
             . _site/
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: '_site'
 
       - id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
