@@ -418,30 +418,100 @@ details[open] summary {
   gap: 0.5em;
 }
 
-.ctrl-label select {
-  appearance: none;
-  -moz-appearance: none;
-  box-sizing: border-box;
+.cs {
+  position: relative;
+  display: inline-flex;
+  flex: 1 1 auto;
+  max-width: 16em;
+  min-width: 6em;
+}
+
+.cs select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.cs-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
   font-family: inherit;
   font-size: 1em;
   font-weight: 300;
-  /* letter-spacing on <select> triggers a Firefox/macOS bug (Bugzilla 1822315) */
-  /* where the native popup renders garbled "Wingdings-like" glyphs. Keep normal. */
   letter-spacing: normal;
+  text-align: left;
   text-transform: none;
   padding: 0 1em;
   height: 2.75em;
-  border: 1px solid transparent;
-  border-radius: 0;
   background: var(--border-bg);
   color: var(--fg);
-  max-width: 16em;
+  border: 1px solid transparent;
+  border-radius: 0;
   cursor: pointer;
   outline: none;
 }
 
-.ctrl-label select:focus {
+.cs-trigger:focus-visible,
+.cs.cs-open .cs-trigger {
   box-shadow: 0 0 0 2px var(--highlight);
+}
+
+.cs-value {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cs-caret {
+  margin-left: 0.5em;
+  font-size: 0.7em;
+  opacity: 0.6;
+  flex: 0 0 auto;
+}
+
+.cs-listbox {
+  position: absolute;
+  top: calc(100% + 0.25em);
+  left: 0;
+  margin: 0;
+  padding: 0.25em 0;
+  list-style: none;
+  background: var(--bg-alt);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  min-width: 100%;
+  width: max-content;
+  max-width: 24em;
+  max-height: 16em;
+  overflow-y: auto;
+  z-index: 1000;
+  font-family: inherit;
+  font-weight: 300;
+  letter-spacing: normal;
+  box-shadow: 0 0.5em 1em rgba(0, 0, 0, 0.4);
+}
+
+.cs-option {
+  padding: 0.4em 1em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cs-option[aria-selected="true"] {
+  background: rgba(155, 241, 255, 0.1);
+}
+
+.cs-option.cs-active,
+.cs-option:hover {
+  background: var(--highlight);
+  color: var(--bg);
 }
 
 #charge-colours {
