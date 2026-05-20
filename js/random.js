@@ -50,6 +50,7 @@ function deviceDisplayName(path) {
   if (isGeometric(path)) return geometricDisplayNames[path];
   return path
     .replace("img/devices/", "")
+    .replace(/^[^/]+\//, "")  // strip category subfolder
     .replace(".png", "")
     .split("-")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
