@@ -274,6 +274,27 @@ test.describe('2020 MacBook Pro / Sonoma 14.6.1 / Firefox 149.0.2 regression', (
     }
   });
 
+  test('randomiser never pairs colour-on-colour or metal-on-metal field tinctures', async ({ page }) => {
+    const metals = new Set(['#d4af34', '#ffffff', '#dbdbdb']); // or, argent, cendree
+
+    for (let i = 0; i < 50; i++) {
+      await page.locator('input[type="submit"]').click();
+      await expect(page.locator('#heraldry > svg')).toBeVisible();
+
+      const { col1, col2 } = await page.evaluate(() => ({
+        col1: document.getElementById('ctrl-col1').value,
+        col2: document.getElementById('ctrl-col2').value,
+      }));
+
+      const col1IsMetal = metals.has(col1);
+      const col2IsMetal = metals.has(col2);
+      expect(
+        col1IsMetal === col2IsMetal,
+        `Iteration ${i}: col1=${col1} and col2=${col2} are both ${col1IsMetal ? 'metals' : 'colours'} — violates rule of tincture`,
+      ).toBe(false);
+    }
+  });
+
   test('viewport and device pixel ratio match target environment', async ({ page }) => {
     const dims = await page.evaluate(() => ({
       width: window.innerWidth,

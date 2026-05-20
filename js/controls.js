@@ -143,7 +143,7 @@ const updateHeraldry = (seed) => {
 
   const device = randomDevice();
   const col1 = randomColour();
-  const col2 = randomColour();
+  const col2 = isNormalRules() ? contrastingTincture(col1, col1, null) : randomColour();
   const shapeValues = Object.values(shapes);
   const shape = shapeValues[Math.floor(random() * shapeValues.length)];
   const count = Math.floor(random() * 7);
