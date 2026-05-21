@@ -3,6 +3,42 @@
 const form = document.querySelector("form");
 const heraldry = document.querySelector("#heraldry");
 
+const CATEGORY_NAMES = {
+  geometric: "Geometric",
+  "world-heavens": "World & Heavens",
+  plants: "Plants",
+  invertebrates: "Invertebrates",
+  fishes: "Fishes",
+  reptiles: "Reptiles",
+  birds: "Birds",
+  beasts: "Beasts",
+  "body-parts": "Body Parts",
+  people: "People",
+  food: "Food",
+  clothing: "Clothing",
+  tools: "Tools",
+  buildings: "Buildings",
+  "arts-sciences": "Arts & Sciences",
+  farming: "Farming",
+  "ships-fishing": "Ships & Fishing",
+  military: "Military",
+  "assorted-objects": "Assorted Objects",
+};
+
+// Build category → slugs map from deviceGroups at startup
+const categoryToSlugs = {};
+for (const [slug, paths] of Object.entries(deviceGroups)) {
+  if (!paths.length) continue;
+  const cat = paths[0].split("/")[2]; // "img/devices/{cat}/..."
+  (categoryToSlugs[cat] = categoryToSlugs[cat] || []).push(slug);
+}
+
+function categoryFromDevice(device) {
+  if (geometricCharges.includes(device)) return "geometric";
+  const parts = device.split("/");
+  return parts.length >= 3 ? parts[2] : "all";
+}
+
 function populateControls() {
   const shapeSelect = document.getElementById("ctrl-shape");
   Object.values(shapes).forEach((v) => {
@@ -30,31 +66,79 @@ function populateControls() {
     countSelect.appendChild(opt);
   }
 
-  const typeSelect = document.getElementById("ctrl-device-type");
-  const geoTypeGroup = document.createElement("optgroup");
-  geoTypeGroup.label = "Geometric";
-  geometricCharges.forEach((name) => {
-    const opt = document.createElement("option");
-    opt.value = name;
-    opt.textContent = geometricDisplayNames[name];
-    geoTypeGroup.appendChild(opt);
-  });
-  typeSelect.appendChild(geoTypeGroup);
-  const figTypeGroup = document.createElement("optgroup");
-  figTypeGroup.label = "Figures";
-  Object.keys(deviceGroups).sort().forEach((slug) => {
-    const opt = document.createElement("option");
-    opt.value = slug;
-    opt.textContent = slug
-      .split("-")
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
-    figTypeGroup.appendChild(opt);
-  });
-  typeSelect.appendChild(figTypeGroup);
+  // Category dropdown
+  const catSelect = document.getElementById("ctrl-category");
+  const allOpt = document.createElement("option");
+  allOpt.value = "all";
+  allOpt.textContent = "All";
+  catSelect.appendChild(allOpt);
+  Object.entries(CATEGORY_NAMES)
+    .sort(([, a], [, b]) => a.localeCompare(b))
+    .forEach(([cat, label]) => {
+      const opt = document.createElement("option");
+      opt.value = cat;
+      opt.textContent = label;
+      catSelect.appendChild(opt);
+    });
 
-  // Populate variant dropdown for the initially selected type
-  populateVariantSelect(typeSelect.value);
+  // Type dropdown — start with "all" view
+  populateTypeSelect("all");
+}
+
+function populateTypeSelect(category) {
+  const typeSelect = document.getElementById("ctrl-device-type");
+  typeSelect.innerHTML = "";
+
+  if (category === "all") {
+    const geoGroup = document.createElement("optgroup");
+    geoGroup.label = "Geometric";
+    geometricCharges.forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = geometricDisplayNames[name];
+      geoGroup.appendChild(opt);
+    });
+    typeSelect.appendChild(geoGroup);
+
+    const figGroup = document.createElement("optgroup");
+    figGroup.label = "Figures";
+    Object.keys(deviceGroups)
+      .sort()
+      .forEach((slug) => {
+        figGroup.appendChild(makeTypeOption(slug));
+      });
+    typeSelect.appendChild(figGroup);
+  } else if (category === "geometric") {
+    const group = document.createElement("optgroup");
+    group.label = "Charges";
+    geometricCharges.forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = geometricDisplayNames[name];
+      group.appendChild(opt);
+    });
+    typeSelect.appendChild(group);
+  } else {
+    const group = document.createElement("optgroup");
+    group.label = CATEGORY_NAMES[category] || category;
+    (categoryToSlugs[category] || [])
+      .slice()
+      .sort()
+      .forEach((slug) => {
+        group.appendChild(makeTypeOption(slug));
+      });
+    typeSelect.appendChild(group);
+  }
+}
+
+function makeTypeOption(slug) {
+  const opt = document.createElement("option");
+  opt.value = slug;
+  opt.textContent = slug
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+  return opt;
 }
 
 function populateVariantSelect(type) {
@@ -72,10 +156,13 @@ function populateVariantSelect(type) {
     return;
   }
 
-  variantLabel.style.display = "";
   const variants = (deviceGroups[type] || [])
     .slice()
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+    .sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }),
+    );
+
+  variantLabel.style.display = variants.length > 1 ? "" : "none";
   variants.forEach((path) => {
     const opt = document.createElement("option");
     opt.value = path;
@@ -138,7 +225,9 @@ function deviceTypeFromPath(path) {
 }
 
 function setControls(device, col1, col2, shape, count, tinctures = []) {
-  // Sync type dropdown then repopulate variants before setting device value
+  const cat = categoryFromDevice(device);
+  document.getElementById("ctrl-category").value = cat;
+  populateTypeSelect(cat);
   const type = deviceTypeFromPath(device);
   if (type) {
     document.getElementById("ctrl-device-type").value = type;
@@ -190,7 +279,9 @@ const updateHeraldry = (seed) => {
 
   const device = randomDevice();
   const col1 = randomColour();
-  const col2 = isNormalRules() ? contrastingTincture(col1, col1, null) : randomColour();
+  const col2 = isNormalRules()
+    ? contrastingTincture(col1, col1, null)
+    : randomColour();
   const shapeValues = Object.values(shapes);
   const shape = shapeValues[Math.floor(random() * shapeValues.length)];
   const count = Math.floor(random() * 7);
@@ -242,6 +333,14 @@ function loadFromHash() {
       document.getElementById("ctrl-shape").value = state.shape;
       document.getElementById("ctrl-col1").value = "#" + state.col1;
       document.getElementById("ctrl-col2").value = "#" + state.col2;
+      const cat = categoryFromDevice(state.device);
+      document.getElementById("ctrl-category").value = cat;
+      populateTypeSelect(cat);
+      const type = deviceTypeFromPath(state.device);
+      if (type) {
+        document.getElementById("ctrl-device-type").value = type;
+        populateVariantSelect(type);
+      }
       document.getElementById("ctrl-device").value = state.device;
       document.getElementById("ctrl-count").value = state.count;
       document.getElementById("ctrl-layout").value = state.layout;
@@ -281,6 +380,17 @@ document.getElementById("ctrl-shape").addEventListener("change", () => {
     renderFromControls();
     updateHashFromControls();
   });
+});
+
+document.getElementById("ctrl-category").addEventListener("change", () => {
+  const cat = document.getElementById("ctrl-category").value;
+  populateTypeSelect(cat);
+  const typeSelect = document.getElementById("ctrl-device-type");
+  if (typeSelect.options.length > 0) {
+    populateVariantSelect(typeSelect.value);
+  }
+  renderFromControls();
+  updateHashFromControls();
 });
 
 document.getElementById("ctrl-device-type").addEventListener("change", () => {

@@ -4,7 +4,10 @@
 // white contrast on Sonoma, "Wingdings" glyph rendering on Sonoma/Sequoia).
 
 (function () {
-  const valueDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+  const valueDesc = Object.getOwnPropertyDescriptor(
+    HTMLSelectElement.prototype,
+    "value",
+  );
   let openInstance = null;
 
   function enhance(select) {
@@ -23,8 +26,8 @@
     const labelEl = select.closest("label");
     if (labelEl) {
       const labelText = Array.from(labelEl.childNodes)
-        .filter(n => n.nodeType === Node.TEXT_NODE)
-        .map(n => n.textContent.trim())
+        .filter((n) => n.nodeType === Node.TEXT_NODE)
+        .map((n) => n.textContent.trim())
         .filter(Boolean)
         .join(" ");
       if (labelText) button.setAttribute("aria-label", labelText);
@@ -58,7 +61,7 @@
         li.dataset.value = opt.value;
         li.id = `cs-${select.id || "sel"}-opt-${i}`;
         li.textContent = opt.textContent;
-        li.addEventListener("click", e => {
+        li.addEventListener("click", (e) => {
           // Stop the click from bubbling to the wrapping <label>, which would otherwise
           // fire a synthetic click on the first labelable descendant (our trigger button)
           // and immediately re-open the dropdown.
@@ -77,8 +80,11 @@
     function sync() {
       const selOpt = select.options[select.selectedIndex];
       valueSpan.textContent = selOpt ? selOpt.textContent : "";
-      Array.from(listbox.children).forEach(li => {
-        li.setAttribute("aria-selected", li.dataset.value === select.value ? "true" : "false");
+      Array.from(listbox.children).forEach((li) => {
+        li.setAttribute(
+          "aria-selected",
+          li.dataset.value === select.value ? "true" : "false",
+        );
       });
     }
 
@@ -90,7 +96,9 @@
     }
 
     function activate(li) {
-      Array.from(listbox.children).forEach(el => el.classList.remove("cs-active"));
+      Array.from(listbox.children).forEach((el) =>
+        el.classList.remove("cs-active"),
+      );
       if (!li) return;
       li.classList.add("cs-active");
       button.setAttribute("aria-activedescendant", li.id);
@@ -102,7 +110,9 @@
       listbox.hidden = false;
       button.setAttribute("aria-expanded", "true");
       wrap.classList.add("cs-open");
-      const cur = listbox.querySelector('[aria-selected="true"]') || listbox.firstElementChild;
+      const cur =
+        listbox.querySelector('[aria-selected="true"]') ||
+        listbox.firstElementChild;
       activate(cur);
       openInstance = api;
     }
@@ -112,7 +122,9 @@
       button.setAttribute("aria-expanded", "false");
       button.removeAttribute("aria-activedescendant");
       wrap.classList.remove("cs-open");
-      Array.from(listbox.children).forEach(el => el.classList.remove("cs-active"));
+      Array.from(listbox.children).forEach((el) =>
+        el.classList.remove("cs-active"),
+      );
       if (openInstance === api) openInstance = null;
     }
 
@@ -127,7 +139,7 @@
 
     button.addEventListener("click", () => (listbox.hidden ? open() : close()));
 
-    button.addEventListener("keydown", e => {
+    button.addEventListener("keydown", (e) => {
       const visible = !listbox.hidden;
       switch (e.key) {
         case "ArrowDown":
@@ -174,7 +186,7 @@
       }
     });
 
-    document.addEventListener("click", e => {
+    document.addEventListener("click", (e) => {
       if (!wrap.contains(e.target) && !listbox.hidden) close();
     });
 
@@ -201,7 +213,9 @@
   }
 
   function enhanceAll(root) {
-    (root || document).querySelectorAll("select:not([data-cs-enhanced])").forEach(enhance);
+    (root || document)
+      .querySelectorAll("select:not([data-cs-enhanced])")
+      .forEach(enhance);
   }
 
   function start() {
