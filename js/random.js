@@ -35,15 +35,19 @@ function isGeometric(device) {
 
 function randomDevice() {
   if (isBretonnian()) {
-    // Give favoured devices 4× the weight of others
     const pool = [
       ...deviceList,
       ...bretonnianFavouredDevices.flatMap((d) => Array(3).fill(d)),
     ];
     return pool[Math.floor(random() * pool.length)];
   }
-  const allDevices = [...geometricCharges, ...deviceList];
-  return allDevices[Math.floor(random() * allDevices.length)];
+  // Include geometric charges as single-entry "types" alongside named groups
+  const typeKeys = Object.keys(deviceGroups);
+  const allTypes = [...geometricCharges, ...typeKeys];
+  const type = allTypes[Math.floor(random() * allTypes.length)];
+  if (geometricCharges.includes(type)) return type;
+  const variants = deviceGroups[type];
+  return variants[Math.floor(random() * variants.length)];
 }
 
 function deviceDisplayName(path) {

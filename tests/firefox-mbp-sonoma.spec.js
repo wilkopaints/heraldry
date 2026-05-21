@@ -45,7 +45,7 @@ test.describe('2020 MacBook Pro / Sonoma 14.6.1 / Firefox 149.0.2 regression', (
   test('save PNG triggers a download with non-empty file', async ({ page }) => {
     await page.click('details summary');
     await page.locator('#ctrl-count').selectOption('1');
-    await page.locator('#ctrl-device').selectOption('annulet');
+    await page.locator('#ctrl-device-type').selectOption('annulet');
     await expect(page.locator('#heraldry > svg')).toBeVisible();
 
     const downloadPromise = page.waitForEvent('download', { timeout: 15000 });

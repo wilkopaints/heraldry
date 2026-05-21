@@ -30,25 +30,58 @@ function populateControls() {
     countSelect.appendChild(opt);
   }
 
-  const deviceSelect = document.getElementById("ctrl-device");
-  const geoGroup = document.createElement("optgroup");
-  geoGroup.label = "Geometric";
+  const typeSelect = document.getElementById("ctrl-device-type");
+  const geoTypeGroup = document.createElement("optgroup");
+  geoTypeGroup.label = "Geometric";
   geometricCharges.forEach((name) => {
     const opt = document.createElement("option");
     opt.value = name;
     opt.textContent = geometricDisplayNames[name];
-    geoGroup.appendChild(opt);
+    geoTypeGroup.appendChild(opt);
   });
-  deviceSelect.appendChild(geoGroup);
-  const figGroup = document.createElement("optgroup");
-  figGroup.label = "Figures";
-  deviceList.forEach((path) => {
+  typeSelect.appendChild(geoTypeGroup);
+  const figTypeGroup = document.createElement("optgroup");
+  figTypeGroup.label = "Figures";
+  Object.keys(deviceGroups).sort().forEach((slug) => {
+    const opt = document.createElement("option");
+    opt.value = slug;
+    opt.textContent = slug
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+    figTypeGroup.appendChild(opt);
+  });
+  typeSelect.appendChild(figTypeGroup);
+
+  // Populate variant dropdown for the initially selected type
+  populateVariantSelect(typeSelect.value);
+}
+
+function populateVariantSelect(type) {
+  const variantSelect = document.getElementById("ctrl-device");
+  variantSelect.innerHTML = "";
+  const variantLabel = document.getElementById("variant-label");
+
+  if (geometricCharges.includes(type)) {
+    // Geometric: single option, hide the variant dropdown
+    const opt = document.createElement("option");
+    opt.value = type;
+    opt.textContent = geometricDisplayNames[type];
+    variantSelect.appendChild(opt);
+    variantLabel.style.display = "none";
+    return;
+  }
+
+  variantLabel.style.display = "";
+  const variants = (deviceGroups[type] || [])
+    .slice()
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+  variants.forEach((path) => {
     const opt = document.createElement("option");
     opt.value = path;
     opt.textContent = deviceDisplayName(path);
-    figGroup.appendChild(opt);
+    variantSelect.appendChild(opt);
   });
-  deviceSelect.appendChild(figGroup);
 }
 
 function updateSwatches() {
@@ -96,7 +129,21 @@ function buildChargeColourControls(count, tinctures = []) {
   }
 }
 
+function deviceTypeFromPath(path) {
+  if (geometricCharges.includes(path)) return path;
+  for (const [slug, paths] of Object.entries(deviceGroups)) {
+    if (paths.includes(path)) return slug;
+  }
+  return null;
+}
+
 function setControls(device, col1, col2, shape, count, tinctures = []) {
+  // Sync type dropdown then repopulate variants before setting device value
+  const type = deviceTypeFromPath(device);
+  if (type) {
+    document.getElementById("ctrl-device-type").value = type;
+    populateVariantSelect(type);
+  }
   document.getElementById("ctrl-device").value = device;
   document.getElementById("ctrl-col1").value = col1;
   document.getElementById("ctrl-col2").value = col2;
@@ -228,12 +275,25 @@ document.getElementById("ctrl-shape").addEventListener("change", () => {
   updateHashFromControls();
 });
 
-["ctrl-col1", "ctrl-col2", "ctrl-device"].forEach((id) => {
+["ctrl-col1", "ctrl-col2"].forEach((id) => {
   document.getElementById(id).addEventListener("change", () => {
     updateSwatches();
     renderFromControls();
     updateHashFromControls();
   });
+});
+
+document.getElementById("ctrl-device-type").addEventListener("change", () => {
+  const type = document.getElementById("ctrl-device-type").value;
+  populateVariantSelect(type);
+  // MutationObserver in custom-select.js rebuilds the listbox automatically
+  renderFromControls();
+  updateHashFromControls();
+});
+
+document.getElementById("ctrl-device").addEventListener("change", () => {
+  renderFromControls();
+  updateHashFromControls();
 });
 
 document.getElementById("ctrl-count").addEventListener("change", () => {
