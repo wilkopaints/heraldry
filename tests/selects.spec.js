@@ -56,16 +56,17 @@ test.describe('Division and Device selects', () => {
     await page.locator('#ctrl-count').selectOption('1');
     await expect(page.locator('#heraldry > svg')).toBeVisible();
 
-    const select = page.locator('#ctrl-device');
+    await page.locator('#ctrl-category').selectOption('all');
+    const typeSelect = page.locator('#ctrl-device-type');
 
-    await select.selectOption('annulet');
+    await typeSelect.selectOption('annulet');
     await expect(page.locator('#heraldry > svg')).toBeVisible();
     const svgBefore = await page.locator('#heraldry').innerHTML();
     await snap(page, 'device-annulet');
 
-    await snapExpanded(page, 'ctrl-device', 'device-dropdown-open');
+    await snapExpanded(page, 'ctrl-device-type', 'device-dropdown-open');
 
-    await select.selectOption('billet');
+    await typeSelect.selectOption('billet');
     await expect(page.locator('#heraldry > svg')).toBeVisible();
     await snap(page, 'device-billet');
 
@@ -74,10 +75,11 @@ test.describe('Division and Device selects', () => {
 
   test('device select has no effect when charge count is zero', async ({ page }) => {
     await page.locator('#ctrl-count').selectOption('0');
-    await page.locator('#ctrl-device').selectOption('annulet');
+    await page.locator('#ctrl-category').selectOption('all');
+    await page.locator('#ctrl-device-type').selectOption('annulet');
     const svgBefore = await page.locator('#heraldry').innerHTML();
 
-    await page.locator('#ctrl-device').selectOption('billet');
+    await page.locator('#ctrl-device-type').selectOption('billet');
 
     expect(await page.locator('#heraldry').innerHTML()).toBe(svgBefore);
   });

@@ -45,7 +45,8 @@ test.describe('2020 MacBook Pro / Sonoma 14.6.1 / Firefox 149.0.2 regression', (
   test('save PNG triggers a download with non-empty file', async ({ page }) => {
     await page.click('details summary');
     await page.locator('#ctrl-count').selectOption('1');
-    await page.locator('#ctrl-device').selectOption('annulet');
+    await page.locator('#ctrl-category').selectOption('all');
+    await page.locator('#ctrl-device-type').selectOption('annulet');
     await expect(page.locator('#heraldry > svg')).toBeVisible();
 
     const downloadPromise = page.waitForEvent('download', { timeout: 15000 });
@@ -171,6 +172,10 @@ test.describe('2020 MacBook Pro / Sonoma 14.6.1 / Firefox 149.0.2 regression', (
     const listbox = wrap.locator('.cs-listbox');
 
     await page.locator('#ctrl-count').selectOption('1');
+    // Ensure variant dropdown is visible by picking a type with many variants
+    await page.locator('#ctrl-category').selectOption('beasts');
+    await page.locator('#ctrl-device-type').selectOption('lion');
+    await expect(page.locator('#variant-label')).toBeVisible();
     await expect(page.locator('#heraldry > svg')).toBeVisible();
 
     await trigger.focus();
@@ -275,7 +280,7 @@ test.describe('2020 MacBook Pro / Sonoma 14.6.1 / Firefox 149.0.2 regression', (
   });
 
   test('randomiser never pairs colour-on-colour or metal-on-metal field tinctures', async ({ page }) => {
-    const metals = new Set(['#d4af34', '#ffffff', '#dbdbdb']); // or, argent, cendree
+    const metals = new Set(['#d4af34', '#ffffff', '#808080']); // or, argent, cendree
 
     for (let i = 0; i < 50; i++) {
       await page.locator('input[type="submit"]').click();
