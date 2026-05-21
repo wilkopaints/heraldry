@@ -56,6 +56,7 @@ test.describe('Division and Device selects', () => {
     await page.locator('#ctrl-count').selectOption('1');
     await expect(page.locator('#heraldry > svg')).toBeVisible();
 
+    await page.locator('#ctrl-category').selectOption('all');
     const typeSelect = page.locator('#ctrl-device-type');
 
     await typeSelect.selectOption('annulet');
@@ -74,6 +75,7 @@ test.describe('Division and Device selects', () => {
 
   test('device select has no effect when charge count is zero', async ({ page }) => {
     await page.locator('#ctrl-count').selectOption('0');
+    await page.locator('#ctrl-category').selectOption('all');
     await page.locator('#ctrl-device-type').selectOption('annulet');
     const svgBefore = await page.locator('#heraldry').innerHTML();
 
