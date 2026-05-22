@@ -556,35 +556,29 @@ async function handleMainPage(request, url) {
   const imageUrl = `${BASE_URL}og-image?state=${stateHash}`;
 
   // Fetch the origin index.html
-  const originReq = new Request(BASE_URL, { headers: request.headers });
-  const originRes = await fetch(originReq);
+  // Fetch index.html explicitly — avoids matching the worker route and triggering
+  // recursive worker invocations that waste CPU and can exceed the 10ms free-tier limit.
+  const originRes = await fetch(`${BASE_URL}index.html`);
 
-  // Rewrite og: tags in-flight with HTMLRewriter
+  const injected =
+    `<meta property="og:image" content="${escHtml(imageUrl)}"/>` +
+    `<meta property="og:image:width" content="1200"/>` +
+    `<meta property="og:image:height" content="630"/>` +
+    `<meta property="og:url" content="${escHtml(url.toString())}"/>` +
+    `<meta name="twitter:card" content="summary_large_image"/>` +
+    `<meta name="twitter:image" content="${escHtml(imageUrl)}"/>`;
+
+  // Append og:image tags to <head> and update the title.
+  // Appending is more reliable than trying to update an existing tag that may or may not exist.
   return new HTMLRewriter()
     .on('title', {
-      element(el) {
-        el.setInnerContent(`${title} – Heraldry Generator`);
-      },
+      element(el) { el.setInnerContent(`${title} – Heraldry Generator`); },
     })
     .on('meta[property="og:title"]', {
       element(el) { el.setAttribute('content', title); },
     })
-    .on('meta[property="og:image"]', {
-      element(el) {
-        el.setAttribute('content', imageUrl);
-        el.after(
-          '<meta property="og:image:width" content="1200"/>' +
-          '<meta property="og:image:height" content="630"/>' +
-          `<meta property="og:url" content="${escHtml(url.toString())}"/>`,
-          { html: true },
-        );
-      },
-    })
-    .on('meta[name="twitter:card"]', {
-      element(el) {
-        el.setAttribute('content', 'summary_large_image');
-        el.after(`<meta name="twitter:image" content="${escHtml(imageUrl)}"/>`, { html: true });
-      },
+    .on('head', {
+      element(el) { el.append(injected, { html: true }); },
     })
     .transform(new Response(originRes.body, {
       status: originRes.status,
