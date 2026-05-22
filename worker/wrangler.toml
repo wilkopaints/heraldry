@@ -1,0 +1,11 @@
+name = "heraldry-og"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# Intercept the main page (to inject og: tags) and the PNG image endpoint.
+# CSS/JS/image sub-resources at /heraldry/* are NOT matched — they pass through to origin.
+routes = [
+  { pattern = "wilkopaints.art/heraldry/og-image*", zone_name = "wilkopaints.art" },
+  { pattern = "wilkopaints.art/heraldry/", zone_name = "wilkopaints.art" },
+  { pattern = "wilkopaints.art/heraldry", zone_name = "wilkopaints.art" }
+]
