@@ -1,7 +1,9 @@
-// URL hash state encoding/decoding
+// URL state encoding/decoding
+// State is stored as a query param (?state=...) so social platforms can see it
+// and the Cloudflare Worker can inject the correct og:image.
+// Old hash-based URLs (#...) are still decoded for backward compatibility.
 
-// Encode current control state to URL hash
-// Format: shape-col1-col2-device-count-layout-chargeCols
+// Format: shape-col1-col2-deviceIdx-count-layout[-chargeCols]
 // Example: chief-d4af34-790000-12-3-d-d4af34-790000
 function encodeState() {
   const shape = document.getElementById("ctrl-shape").value;
@@ -49,8 +51,8 @@ function decodeState(hash) {
   };
 }
 
-// Update URL hash with current state
+// Update URL with current state as a query param
 function updateHashFromControls() {
-  const hash = encodeState();
-  history.replaceState(null, "", "#" + hash);
+  const state = encodeState();
+  history.replaceState(null, "", "?state=" + state);
 }

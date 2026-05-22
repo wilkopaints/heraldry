@@ -617,6 +617,30 @@ details[open] summary {
   }
 }
 
+/* Share toast notification */
+#share-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(1rem);
+  background: var(--fg);
+  color: var(--bg);
+  padding: 0.5em 1.2em;
+  border-radius: 2px;
+  font-size: 0.85em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 1000;
+}
+
+#share-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 @media (max-width: 480px) {
   #header nav a[href="#menu"] {
     overflow: hidden;
