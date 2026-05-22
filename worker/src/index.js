@@ -1,4 +1,7 @@
 import { initWasm, Resvg } from '@resvg/resvg-wasm';
+// resvgWasm is a pre-compiled WebAssembly.Module bundled by Cloudflare at deploy time.
+// Runtime cost is ~1ms instantiation rather than ~12ms compilation — stays within free tier.
+import resvgWasm from './resvg.wasm';
 import {
   deviceList,
   geometricCharges,
@@ -9,15 +12,13 @@ import {
 } from './data.js';
 
 const BASE_URL = 'https://wilkopaints.art/heraldry/';
-const RESVG_WASM_CDN =
-  'https://cdn.jsdelivr.net/npm/@resvg/resvg-wasm@2.6.2/index_bg.wasm';
 
-// Singleton promise so concurrent requests don't double-init
+// Singleton — initWasm throws if called twice, and instantiation is per-isolate anyway
 let wasmInitPromise = null;
 
 function ensureWasm() {
   if (!wasmInitPromise) {
-    wasmInitPromise = fetch(RESVG_WASM_CDN).then((resp) => initWasm(resp));
+    wasmInitPromise = initWasm(resvgWasm);
   }
   return wasmInitPromise;
 }
@@ -357,6 +358,46 @@ function getDivisionSpecificArrangement(count, shape) {
       if (count===5) return {positions:[{cx:40,cy:20},{cx:160,cy:20},{cx:40,cy:100},{cx:160,cy:100},{cx:100,cy:180}],size:38};
       if (count===6) return {positions:[{cx:40,cy:60},{cx:100,cy:60},{cx:160,cy:60},{cx:40,cy:140},{cx:100,cy:140},{cx:160,cy:140}],size:40};
       break;
+    case 'base':
+      if (count===3) return {positions:[{cx:55,cy:60},{cx:100,cy:140},{cx:145,cy:60}],size:60};
+      if (count===5) return {positions:[{cx:55,cy:45},{cx:55,cy:110},{cx:145,cy:45},{cx:145,cy:110},{cx:100,cy:155}],size:45};
+      if (count===6) return {positions:[{cx:55,cy:30},{cx:55,cy:90},{cx:145,cy:30},{cx:145,cy:90},{cx:55,cy:150},{cx:145,cy:150}],size:45};
+      break;
+    case 'bend':
+      if (count===2) return {positions:[{cx:50,cy:47},{cx:140,cy:157}],size:52};
+      if (count===3) return {positions:[{cx:48,cy:43},{cx:100,cy:108},{cx:152,cy:173}],size:46};
+      if (count===5) return {positions:[{cx:40,cy:32},{cx:69,cy:69},{cx:98,cy:106},{cx:127,cy:143},{cx:156,cy:180}],size:50};
+      if (count===6) return {positions:[{cx:36,cy:28},{cx:60,cy:58},{cx:83,cy:89},{cx:107,cy:120},{cx:132,cy:151},{cx:156,cy:180}],size:40};
+      break;
+    case 'bendSinister':
+      if (count===2) return {positions:[{cx:150,cy:47},{cx:60,cy:157}],size:52};
+      if (count===3) return {positions:[{cx:156,cy:39},{cx:104,cy:104},{cx:52,cy:169}],size:46};
+      if (count===5) return {positions:[{cx:46,cy:178},{cx:75,cy:141},{cx:104,cy:104},{cx:133,cy:67},{cx:162,cy:30}],size:50};
+      if (count===6) return {positions:[{cx:46,cy:176},{cx:70,cy:147},{cx:93,cy:116},{cx:117,cy:85},{cx:142,cy:54},{cx:166,cy:24}],size:40};
+      break;
+    case 'canton':
+      if (count===1) return {positions:[{cx:30,cy:30}],size:38};
+      if (count===3) return {positions:[{cx:58,cy:85},{cx:142,cy:85},{cx:100,cy:167}],size:50};
+      if (count===6) return {positions:[{cx:60,cy:60},{cx:140,cy:60},{cx:60,cy:110},{cx:140,cy:110},{cx:60,cy:160},{cx:140,cy:160}],size:46};
+      break;
+    case 'chequy':
+      if (count===2) return {positions:[{cx:58,cy:100},{cx:142,cy:100}],size:68};
+      if (count===3) return {positions:[{cx:58,cy:80},{cx:142,cy:80},{cx:100,cy:160}],size:60};
+      if (count===4) return {positions:[{cx:58,cy:80},{cx:142,cy:80},{cx:58,cy:160},{cx:142,cy:160}],size:60};
+      if (count===5) return {positions:[{cx:60,cy:60},{cx:140,cy:60},{cx:60,cy:120},{cx:140,cy:120},{cx:100,cy:180}],size:50};
+      break;
+    case 'chevron':
+      if (count===1) return {positions:[{cx:100,cy:120}],size:60};
+      if (count===2) return {positions:[{cx:35,cy:32},{cx:165,cy:32}],size:55};
+      if (count===3) return {positions:[{cx:35,cy:32},{cx:165,cy:32},{cx:100,cy:160}],size:52};
+      if (count===5) return {positions:[{cx:35,cy:32},{cx:165,cy:32},{cx:55,cy:170},{cx:145,cy:170},{cx:100,cy:110}],size:52};
+      if (count===6) return {positions:[{cx:35,cy:32},{cx:165,cy:32},{cx:65,cy:185},{cx:135,cy:185},{cx:135,cy:130},{cx:65,cy:130}],size:40};
+      break;
+    case 'chevronny':
+      if (count===1) return {positions:[{cx:100,cy:105}],size:130};
+      if (count===2) return {positions:[{cx:60,cy:90},{cx:140,cy:90}],size:40};
+      if (count===3) return {positions:[{cx:60,cy:90},{cx:140,cy:90},{cx:100,cy:160}],size:40};
+      break;
     case 'chief':
       if (count===1) return {positions:[{cx:100,cy:32}],size:42};
       if (count===2) return {positions:[{cx:60,cy:32},{cx:140,cy:32}],size:38};
@@ -369,52 +410,128 @@ function getDivisionSpecificArrangement(count, shape) {
       if (count===3) return {positions:[{cx:40,cy:108},{cx:100,cy:45},{cx:160,cy:108}],size:38};
       if (count===4) return {positions:[{cx:100,cy:45},{cx:40,cy:108},{cx:160,cy:108},{cx:100,cy:175}],size:40};
       if (count===5) return {positions:[{cx:100,cy:108},{cx:100,cy:45},{cx:100,cy:175},{cx:40,cy:108},{cx:160,cy:108}],size:40};
+      if (count===6) return {positions:[{cx:100,cy:133},{cx:100,cy:30},{cx:100,cy:83},{cx:100,cy:190},{cx:40,cy:108},{cx:160,cy:108}],size:40};
       break;
     case 'fess':
       if (count===2) return {positions:[{cx:65,cy:108},{cx:135,cy:108}],size:48};
       if (count===3) return {positions:[{cx:45,cy:108},{cx:100,cy:108},{cx:155,cy:108}],size:42};
       if (count===4) return {positions:[{cx:25,cy:108},{cx:75,cy:108},{cx:125,cy:108},{cx:175,cy:108}],size:42};
+      if (count===5) return {positions:[{cx:65,cy:38},{cx:135,cy:38},{cx:45,cy:108},{cx:100,cy:108},{cx:155,cy:108}],size:42};
+      if (count===6) return {positions:[{cx:45,cy:38},{cx:100,cy:38},{cx:155,cy:38},{cx:45,cy:108},{cx:100,cy:108},{cx:155,cy:108}],size:42};
+      break;
+    case 'flaunches':
+      if (count===5) return {positions:[{cx:35,cy:108},{cx:165,cy:108},{cx:100,cy:38},{cx:100,cy:108},{cx:100,cy:178}],size:42};
+      break;
+    case 'fret':
+      if (count===2) return {positions:[{cx:60,cy:119},{cx:140,cy:119}],size:70};
+      break;
+    case 'gyronny6':
+      if (count===2) return {positions:[{cx:60,cy:50},{cx:140,cy:50}],size:70};
+      if (count===4) return {positions:[{cx:60,cy:175},{cx:140,cy:175},{cx:60,cy:50},{cx:140,cy:50}],size:50};
+      if (count===6) return {positions:[{cx:60,cy:50},{cx:140,cy:50},{cx:40,cy:118},{cx:160,cy:118},{cx:60,cy:180},{cx:140,cy:180}],size:50};
+      break;
+    case 'gyronny':
+      if (count===1) return {positions:[{cx:100,cy:120}],size:130};
+      if (count===2) return {positions:[{cx:50,cy:120},{cx:150,cy:120}],size:70};
+      if (count===4) return {positions:[{cx:70,cy:185},{cx:130,cy:185},{cx:70,cy:40},{cx:130,cy:40}],size:50};
+      if (count===6) return {positions:[{cx:70,cy:185},{cx:130,cy:185},{cx:70,cy:40},{cx:130,cy:40},{cx:50,cy:120},{cx:150,cy:120}],size:50};
+      break;
+    case 'gyronny12':
+      if (count===1) return {positions:[{cx:100,cy:120}],size:130};
+      if (count===2) return {positions:[{cx:50,cy:120},{cx:150,cy:120}],size:70};
+      if (count===6) return {positions:[{cx:62,cy:185},{cx:137,cy:185},{cx:55,cy:40},{cx:145,cy:40},{cx:50,cy:120},{cx:150,cy:120}],size:50};
+      break;
+    case 'label':
+      if (count===1) return {positions:[{cx:100,cy:155}],size:85};
+      if (count===3) return {positions:[{cx:45,cy:150},{cx:100,cy:150},{cx:155,cy:150}],size:45};
+      if (count===4) return {positions:[{cx:60,cy:185},{cx:140,cy:185},{cx:60,cy:120},{cx:140,cy:120}],size:50};
+      if (count===5) return {positions:[{cx:75,cy:185},{cx:125,cy:185},{cx:50,cy:120},{cx:150,cy:120},{cx:100,cy:120}],size:40};
+      if (count===6) return {positions:[{cx:50,cy:185},{cx:150,cy:185},{cx:100,cy:185},{cx:50,cy:120},{cx:150,cy:120},{cx:100,cy:120}],size:40};
+      break;
+    case 'lozengy':
+      if (count===1) return {positions:[{cx:100,cy:100}],size:130};
+      if (count===2) return {positions:[{cx:60,cy:100},{cx:140,cy:100}],size:70};
+      if (count===3) return {positions:[{cx:60,cy:100},{cx:140,cy:100},{cx:100,cy:160}],size:70};
+      if (count===4) return {positions:[{cx:60,cy:80},{cx:140,cy:80},{cx:60,cy:160},{cx:140,cy:160}],size:60};
+      if (count===5) return {positions:[{cx:60,cy:40},{cx:140,cy:40},{cx:60,cy:120},{cx:140,cy:120},{cx:100,cy:200}],size:60};
+      if (count===6) return {positions:[{cx:60,cy:40},{cx:140,cy:40},{cx:60,cy:120},{cx:140,cy:120},{cx:60,cy:200},{cx:140,cy:200}],size:40};
+      break;
+    case 'orle':
+      if (count===1) return {positions:[{cx:100,cy:110}],size:120};
+      if (count===2) return {positions:[{cx:100,cy:80},{cx:100,cy:150}],size:60};
+      if (count===3) return {positions:[{cx:70,cy:80},{cx:130,cy:80},{cx:100,cy:150}],size:55};
+      if (count===4) return {positions:[{cx:70,cy:80},{cx:130,cy:80},{cx:70,cy:140},{cx:130,cy:140}],size:50};
+      if (count===5) return {positions:[{cx:70,cy:70},{cx:130,cy:70},{cx:70,cy:125},{cx:130,cy:125},{cx:100,cy:170}],size:50};
+      if (count===6) return {positions:[{cx:70,cy:60},{cx:130,cy:60},{cx:70,cy:105},{cx:130,cy:105},{cx:70,cy:150},{cx:130,cy:150}],size:40};
       break;
     case 'pale':
       if (count===2) return {positions:[{cx:100,cy:72},{cx:100,cy:158}],size:48};
       if (count===3) return {positions:[{cx:100,cy:50},{cx:100,cy:115},{cx:100,cy:180}],size:44};
       break;
+    case 'pall':
+      if (count===2) return {positions:[{cx:40,cy:140},{cx:160,cy:140}],size:60};
+      if (count===3) return {positions:[{cx:40,cy:40},{cx:160,cy:40},{cx:100,cy:190}],size:38};
+      if (count===4) return {positions:[{cx:40,cy:40},{cx:160,cy:40},{cx:100,cy:100},{cx:100,cy:190}],size:38};
+      if (count===5) return {positions:[{cx:40,cy:40},{cx:160,cy:40},{cx:100,cy:100},{cx:100,cy:150},{cx:100,cy:200}],size:38};
+      if (count===6) return {positions:[{cx:40,cy:40},{cx:160,cy:40},{cx:75,cy:80},{cx:125,cy:80},{cx:100,cy:140},{cx:100,cy:200}],size:38};
+      break;
+    case 'partyPerBendSinister':
+      if (count===1) return {positions:[{cx:100,cy:120}],size:130};
+      if (count===2) return {positions:[{cx:100,cy:50},{cx:100,cy:180}],size:70};
+      if (count===3) return {positions:[{cx:50,cy:110},{cx:100,cy:50},{cx:140,cy:140}],size:55};
+      if (count===4) return {positions:[{cx:50,cy:110},{cx:100,cy:50},{cx:160,cy:110},{cx:110,cy:170}],size:55};
+      if (count===5) return {positions:[{cx:40,cy:120},{cx:110,cy:40},{cx:75,cy:80},{cx:160,cy:120},{cx:120,cy:160}],size:55};
+      if (count===6) return {positions:[{cx:45,cy:120},{cx:115,cy:40},{cx:80,cy:80},{cx:135,cy:140},{cx:170,cy:100},{cx:95,cy:180}],size:55};
+      break;
     case 'partyPerFess':
       if (count===2) return {positions:[{cx:100,cy:55},{cx:100,cy:172}],size:70};
       if (count===3) return {positions:[{cx:60,cy:55},{cx:140,cy:55},{cx:100,cy:172}],size:60};
       if (count===4) return {positions:[{cx:55,cy:55},{cx:145,cy:55},{cx:55,cy:170},{cx:145,cy:170}],size:58};
+      if (count===5) return {positions:[{cx:40,cy:55},{cx:100,cy:55},{cx:160,cy:55},{cx:70,cy:170},{cx:130,cy:170}],size:50};
+      if (count===6) return {positions:[{cx:40,cy:55},{cx:100,cy:55},{cx:160,cy:55},{cx:50,cy:170},{cx:100,cy:170},{cx:150,cy:170}],size:44};
+      break;
+    case 'pile':
+      if (count===2) return {positions:[{cx:100,cy:65},{cx:100,cy:155}],size:70};
+      if (count===3) return {positions:[{cx:60,cy:55},{cx:140,cy:55},{cx:100,cy:155}],size:60};
+      if (count===4) return {positions:[{cx:55,cy:55},{cx:145,cy:55},{cx:40,cy:160},{cx:160,cy:160}],size:50};
+      if (count===5) return {positions:[{cx:60,cy:50},{cx:140,cy:50},{cx:100,cy:140},{cx:40,cy:160},{cx:160,cy:160}],size:50};
+      if (count===6) return {positions:[{cx:50,cy:55},{cx:100,cy:110},{cx:150,cy:55},{cx:40,cy:170},{cx:100,cy:170},{cx:160,cy:170}],size:44};
       break;
     case 'partyPerPale':
       if (count===2) return {positions:[{cx:50,cy:108},{cx:150,cy:108}],size:68};
       if (count===3) return {positions:[{cx:50,cy:108},{cx:150,cy:70},{cx:150,cy:158}],size:58};
       if (count===4) return {positions:[{cx:50,cy:70},{cx:150,cy:70},{cx:50,cy:160},{cx:150,cy:160}],size:56};
+      if (count===6) return {positions:[{cx:50,cy:55},{cx:150,cy:55},{cx:50,cy:115},{cx:150,cy:115},{cx:50,cy:175},{cx:150,cy:175}],size:46};
+      break;
+    case 'quarter':
+      if (count===1) return {positions:[{cx:50,cy:55}],size:65};
+      if (count===2) return {positions:[{cx:50,cy:32},{cx:50,cy:78}],size:38};
+      if (count===3) return {positions:[{cx:30,cy:35},{cx:70,cy:35},{cx:50,cy:80}],size:30};
+      if (count===4) return {positions:[{cx:30,cy:35},{cx:70,cy:35},{cx:30,cy:80},{cx:70,cy:80}],size:30};
+      if (count===5) return {positions:[{cx:30,cy:30},{cx:70,cy:30},{cx:30,cy:80},{cx:70,cy:80},{cx:50,cy:55}],size:30};
+      if (count===6) return {positions:[{cx:20,cy:30},{cx:60,cy:30},{cx:20,cy:80},{cx:60,cy:80},{cx:40,cy:55},{cx:80,cy:55}],size:30};
       break;
     case 'quarterly':
       if (count===2) return {positions:[{cx:50,cy:55},{cx:145,cy:160}],size:68};
       if (count===3) return {positions:[{cx:50,cy:55},{cx:150,cy:55},{cx:100,cy:170}],size:62};
       if (count===4) return {positions:[{cx:50,cy:55},{cx:150,cy:55},{cx:50,cy:160},{cx:150,cy:160}],size:56};
+      if (count===5) return {positions:[{cx:50,cy:55},{cx:150,cy:55},{cx:50,cy:160},{cx:150,cy:160},{cx:100,cy:110}],size:56};
+      if (count===6) return {positions:[{cx:50,cy:75},{cx:150,cy:75},{cx:50,cy:30},{cx:150,cy:30},{cx:50,cy:160},{cx:150,cy:160}],size:40};
       break;
     case 'saltire':
       if (count===2) return {positions:[{cx:166,cy:110},{cx:34,cy:110}],size:48};
       if (count===3) return {positions:[{cx:38,cy:110},{cx:162,cy:110},{cx:100,cy:175}],size:48};
       if (count===4) return {positions:[{cx:100,cy:40},{cx:38,cy:110},{cx:162,cy:110},{cx:100,cy:175}],size:48};
+      if (count===5) return {positions:[{cx:100,cy:108},{cx:54,cy:52},{cx:146,cy:52},{cx:52,cy:165},{cx:148,cy:165}],size:34};
+      if (count===6) return {positions:[{cx:124,cy:135},{cx:76,cy:135},{cx:54,cy:52},{cx:146,cy:52},{cx:44,cy:175},{cx:156,cy:175}],size:34};
       break;
-    case 'chevron':
-      if (count===1) return {positions:[{cx:100,cy:120}],size:60};
-      if (count===2) return {positions:[{cx:35,cy:32},{cx:165,cy:32}],size:55};
-      if (count===3) return {positions:[{cx:35,cy:32},{cx:165,cy:32},{cx:100,cy:160}],size:52};
+    case 'tressure':
+      if (count===2) return {positions:[{cx:100,cy:80},{cx:100,cy:160}],size:60};
+      if (count===3) return {positions:[{cx:70,cy:80},{cx:130,cy:80},{cx:100,cy:160}],size:50};
+      if (count===4) return {positions:[{cx:100,cy:60},{cx:58,cy:110},{cx:142,cy:110},{cx:100,cy:160}],size:48};
+      if (count===5) return {positions:[{cx:100,cy:170},{cx:60,cy:70},{cx:140,cy:70},{cx:60,cy:130},{cx:140,cy:130}],size:48};
+      if (count===6) return {positions:[{cx:70,cy:105},{cx:130,cy:105},{cx:70,cy:55},{cx:130,cy:55},{cx:70,cy:155},{cx:130,cy:155}],size:40};
       break;
-    case 'orle':
-      if (count===1) return {positions:[{cx:100,cy:110}],size:120};
-      if (count===3) return {positions:[{cx:70,cy:80},{cx:130,cy:80},{cx:100,cy:150}],size:55};
-      if (count===4) return {positions:[{cx:70,cy:80},{cx:130,cy:80},{cx:70,cy:140},{cx:130,cy:140}],size:50};
-      break;
-    case 'pile':
-      if (count===2) return {positions:[{cx:100,cy:65},{cx:100,cy:155}],size:70};
-      if (count===3) return {positions:[{cx:60,cy:55},{cx:140,cy:55},{cx:100,cy:155}],size:60};
-      break;
-    case 'bordure':
-      break; // fall through to standard
     default:
       break;
   }
@@ -541,60 +658,51 @@ async function buildOgPng(state) {
 
 // ── Request handlers ───────────────────────────────────────────────────────────
 
-// Intercept the main page only when ?state= is present.
-// Uses HTMLRewriter to update og: meta tags in the origin HTML in-flight.
-// Without ?state=, passes straight through to origin (no overhead for normal visits).
-async function handleMainPage(request, url) {
-  const stateHash = url.searchParams.get('state');
+// Known social-preview bot User-Agents.
+// Bots get a minimal HTML page with og: tags — no origin fetch, no HTMLRewriter.
+// Real browsers pass straight through; the JS app reads ?state= from location.search.
+const BOT_UA_RE =
+  /discordbot|twitterbot|bluesky|bsky\.app|linkedinbot|slackbot|facebookexternalhit|whatsapp|telegram|iframely|embedly/i;
 
-  if (!stateHash) {
-    return fetch(request);
-  }
+function handleMainPage(request, url) {
+  const stateHash = url.searchParams.get('state');
+  if (!stateHash) return fetch(request);
+
+  const ua = request.headers.get('user-agent') ?? '';
+  if (!BOT_UA_RE.test(ua)) return fetch(request);
 
   const state = decodeState(stateHash);
   const title = stateToTitle(state);
   const imageUrl = `${BASE_URL}og-image?state=${stateHash}`;
+  const appUrl = url.toString();
 
-  // Fetch the origin index.html
-  // Fetch index.html explicitly — avoids matching the worker route and triggering
-  // recursive worker invocations that waste CPU and can exceed the 10ms free-tier limit.
-  const originRes = await fetch(`${BASE_URL}index.html`);
-
-  const injected =
+  const html =
+    `<!DOCTYPE html><html lang="en"><head>` +
+    `<meta charset="UTF-8"/>` +
+    `<title>${escHtml(title)} – Heraldry Generator</title>` +
+    `<meta property="og:type" content="website"/>` +
+    `<meta property="og:title" content="${escHtml(title)}"/>` +
+    `<meta property="og:description" content="A heraldic shield generated with the Wilko Paints Heraldry Generator"/>` +
     `<meta property="og:image" content="${escHtml(imageUrl)}"/>` +
     `<meta property="og:image:width" content="1200"/>` +
     `<meta property="og:image:height" content="630"/>` +
-    `<meta property="og:url" content="${escHtml(url.toString())}"/>` +
+    `<meta property="og:url" content="${escHtml(appUrl)}"/>` +
     `<meta name="twitter:card" content="summary_large_image"/>` +
-    `<meta name="twitter:image" content="${escHtml(imageUrl)}"/>`;
+    `<meta name="twitter:image" content="${escHtml(imageUrl)}"/>` +
+    `</head><body><p><a href="${escHtml(appUrl)}">View this heraldic shield</a></p></body></html>`;
 
-  // Append og:image tags to <head> and update the title.
-  // Appending is more reliable than trying to update an existing tag that may or may not exist.
-  return new HTMLRewriter()
-    .on('title', {
-      element(el) { el.setInnerContent(`${title} – Heraldry Generator`); },
-    })
-    .on('meta[property="og:title"]', {
-      element(el) { el.setAttribute('content', title); },
-    })
-    .on('head', {
-      element(el) { el.append(injected, { html: true }); },
-    })
-    .transform(new Response(originRes.body, {
-      status: originRes.status,
-      headers: {
-        ...Object.fromEntries(originRes.headers),
-        'cache-control': 'public, max-age=3600',
-      },
-    }));
+  return new Response(html, {
+    headers: {
+      'content-type': 'text/html;charset=UTF-8',
+      'cache-control': 'public, max-age=3600',
+    },
+  });
 }
 
 async function handleOgImage(url) {
   const stateHash = url.searchParams.get('state') ?? '';
   const state = decodeState(stateHash);
-  if (!state) {
-    return new Response('Invalid state', { status: 400 });
-  }
+  if (!state) return new Response('Invalid state', { status: 400 });
 
   try {
     const png = await buildOgPng(state);
@@ -604,10 +712,103 @@ async function handleOgImage(url) {
         'cache-control': 'public, max-age=604800, immutable',
       },
     });
-  } catch (err) {
-    console.error('og-image error:', err);
-    return new Response('Image generation failed', { status: 500 });
+  } catch (resvgErr) {
+    // resvg commonly fails on free-tier (10ms CPU limit). Fall back to a
+    // minimal pure-JS PNG that at least shows the shield's two tinctures.
+    console.error('resvg failed, using colour fallback:', resvgErr?.message);
+    try {
+      const png = await tincturePng(state.col1, state.col2);
+      return new Response(png, {
+        headers: {
+          'content-type': 'image/png',
+          'cache-control': 'public, max-age=3600',
+        },
+      });
+    } catch (fbErr) {
+      console.error('colour fallback failed:', fbErr?.message);
+      return new Response('Image generation failed', { status: 500 });
+    }
   }
+}
+
+// ── Pure-JS fallback PNG (no WASM) ────────────────────────────────────────────
+// Generates a 600×315 image split vertically into the two heraldic tinctures.
+
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+async function tincturePng(col1, col2) {
+  const W = 600, H = 315;
+  const [r1, g1, b1] = hexToRgb(col1);
+  const [r2, g2, b2] = hexToRgb(col2);
+
+  // Raw scanlines: 1 filter byte + W*3 RGB bytes per row
+  const rowLen = 1 + W * 3;
+  const raw = new Uint8Array(H * rowLen);
+  for (let y = 0; y < H; y++) {
+    raw[y * rowLen] = 0; // filter type None
+    for (let x = 0; x < W; x++) {
+      const left = x < W / 2;
+      const o = y * rowLen + 1 + x * 3;
+      raw[o] = left ? r1 : r2;
+      raw[o + 1] = left ? g1 : g2;
+      raw[o + 2] = left ? b1 : b2;
+    }
+  }
+
+  // Compress with zlib (CompressionStream('deflate') = RFC 1950 zlib format)
+  const cs = new CompressionStream('deflate');
+  const w = cs.writable.getWriter();
+  await w.write(raw);
+  await w.close();
+  const idat = new Uint8Array(await new Response(cs.readable).arrayBuffer());
+
+  return buildPng(W, H, idat);
+}
+
+function buildPng(w, h, idatData) {
+  const sig = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+
+  const ihdrData = new Uint8Array(13);
+  const dv = new DataView(ihdrData.buffer);
+  dv.setUint32(0, w); dv.setUint32(4, h);
+  ihdrData[8] = 8; ihdrData[9] = 2; // 8-bit depth, RGB colour
+
+  const ihdr = pngChunk('IHDR', ihdrData);
+  const idat = pngChunk('IDAT', idatData);
+  const iend = pngChunk('IEND', new Uint8Array(0));
+
+  const out = new Uint8Array(sig.length + ihdr.length + idat.length + iend.length);
+  let pos = 0;
+  for (const arr of [sig, ihdr, idat, iend]) { out.set(arr, pos); pos += arr.length; }
+  return out;
+}
+
+function pngChunk(type, data) {
+  const chunk = new Uint8Array(4 + 4 + data.length + 4);
+  const dv = new DataView(chunk.buffer);
+  dv.setUint32(0, data.length);
+  chunk.set(new TextEncoder().encode(type), 4);
+  if (data.length) chunk.set(data, 8);
+  dv.setUint32(8 + data.length, crc32(chunk.subarray(4, 8 + data.length)));
+  return chunk;
+}
+
+function crc32(buf) {
+  const T = crc32._t ?? (crc32._t = (() => {
+    const t = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let j = 0; j < 8; j++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+      t[i] = c;
+    }
+    return t;
+  })());
+  let c = 0xffffffff;
+  for (const b of buf) c = T[(c ^ b) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
 }
 
 function escHtml(str) {
