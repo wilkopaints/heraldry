@@ -9,3 +9,8 @@ routes = [
   { pattern = "wilkopaints.art/heraldry/", zone_name = "wilkopaints.art" },
   { pattern = "wilkopaints.art/heraldry", zone_name = "wilkopaints.art" }
 ]
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+
