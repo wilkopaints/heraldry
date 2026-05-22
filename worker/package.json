@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "cp node_modules/@resvg/resvg-wasm/index_bg.wasm src/resvg.wasm",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
   },
