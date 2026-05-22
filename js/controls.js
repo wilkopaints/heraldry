@@ -324,9 +324,10 @@ function recomputeChargeColours() {
 // Initialize controls
 populateControls();
 
-// Load from URL hash or generate random
+// Load from URL state (?state=...) or legacy hash (#...), or generate random
 function loadFromHash() {
-  const hash = location.hash.slice(1);
+  const stateParam = new URLSearchParams(location.search).get("state");
+  const hash = stateParam || location.hash.slice(1);
   if (hash) {
     const state = decodeState(hash);
     if (state) {
@@ -351,6 +352,10 @@ function loadFromHash() {
         state.chargeCols.map((c) => "#" + c),
       );
       renderFromControls();
+      // Normalise legacy hash URLs to query param format
+      if (!stateParam && location.hash) {
+        history.replaceState(null, "", "?state=" + hash);
+      }
       return;
     }
   }
@@ -358,7 +363,7 @@ function loadFromHash() {
 }
 loadFromHash();
 
-window.addEventListener("hashchange", loadFromHash);
+window.addEventListener("popstate", loadFromHash);
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -452,3 +457,25 @@ ruleBoxes.forEach((box) => {
 
 // Save as PNG functionality
 document.getElementById("save-png").addEventListener("click", savePNG);
+
+// Share — copies the current URL (which now includes ?state= so Discord/BlueSky previews work)
+document.getElementById("share-link").addEventListener("click", () => {
+  navigator.clipboard.writeText(location.href).then(() => {
+    showToast("Link copied!");
+  }).catch(() => {
+    window.prompt("Copy this link:", location.href);
+  });
+});
+
+function showToast(msg) {
+  let toast = document.getElementById("share-toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "share-toast";
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.classList.add("visible");
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove("visible"), 2000);
+}
